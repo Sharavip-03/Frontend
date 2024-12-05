@@ -1,0 +1,105 @@
+/************ Default CSS ************/
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #fff4d5;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #121212;
+  color: white;
+}
+
+/************ Navbar CSS ************/
+
+/* Navbar fijo */
+/* Navbar fijo */
+.coloritos {
+  align-items: center;
+  background-color: #ed8c28;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 10000; /* Asegura que el navbar esté encima */
+  padding: 10px 60px;
+  transition: all 0.3s ease;
+}
+
+/* Compensar el espacio ocupado por el Navbar */
+body {
+  padding-top: 70px; /* Ajusta este valor según la altura del Navbar */
+}
+
+/* Línea separadora debajo del navbar */
+.navbar-separator {
+  margin-top: 150px;
+  height: 20px; /* Grosor de la línea */
+  background-color: #4c9e9e; /* Color de la línea */
+  width: 100%; /* Ocupa todo el ancho */
+  z-index: 5; /* Asegura que el separador esté por debajo del navbar */
+  position: relative; /* Para mantener su lugar en el flujo del documento */
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.1); /* Opcional */
+}
+
+
+nav.navbar {
+  padding: 1px 0;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 9999;
+  transition: 0.32s ease-in-out;
+}
+
+nav.navbar.scrolled {
+  padding: 0px;
+  background-color: #121212; /* Cambiar a tu color deseado */
+}
+
+.navbar-text {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-nav .nav-link.navbar-link .btn{
+  color: #fff4d5;
+  text-decoration: none;
+  padding: 10px 25px;
+  background-color: #4c9e9e;
+  border: 2px;
+  margin-left: 10px;
+}
+
+.navbar-nav .nav-link.navbar-link:hover,
+.navbar-nav .nav-link.navbar-link.active {
+  opacity: 1;
+}
+
+.navbar-toggler-icon {
+  background-color: #e16c26;
+}
+
+.navbar-links .btn {
+  color: white;
+  text-decoration: none;
+  padding: 10px 25px;
+  background-color: #4c9e9e;
+  border: 2px;
+  margin-left: 10px;
+}
+
+.navbar-links .btn:hover {
+  background-color: #fff4d5;
+  color: #121212;
+  border: 1px solid transparent;
+}
+
+.percat{
+
+}

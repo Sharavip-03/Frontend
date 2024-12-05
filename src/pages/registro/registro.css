@@ -1,0 +1,127 @@
+.header-container {
+  background-color: #ed8c28;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.modal-title {
+  font-family: 'Antique Book Cover', sans-serif;
+  font-weight: bold;
+  color: white;
+  margin: 0;
+}
+.registro {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100px;
+  min-width: 500px;
+  background-size: cover;
+}
+
+.wrapper {
+  width: 500px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 15px;
+  border: 2px solid #2a2f32;
+  padding: 20px;
+  background: url('../../assets/images/form.jpg') no-repeat center center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
+  font-family: 'Antique Book Cover', sans-serif;
+  color: white;
+}
+
+.wrapper h1 {
+  color: white;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.input-box input {
+  width: 100%; /* Mantener los campos en ancho completo */
+  height: 45px; 
+  background-color: #fff9e1;
+  border: none;
+  border-radius: 15px;
+  padding: 10px;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+.input-box input::placeholder {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.input-box:hover .ayuda {
+  display: block;
+  opacity: 1;
+}
+
+.ayuda {
+  display: none;
+  background-color: #2a2f32;
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 14px;
+  padding: 3px;
+  margin-top: 5px;
+  transition: opacity 0.3s ease;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #fff;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  display: inline-block;
+}
+
+button:hover {
+  background-color: #f0f0f0;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.login-link a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .registro {
+    padding: 15px;
+  }
+
+  .wrapper {
+    max-width: 95vw;
+    padding: 15px;
+    margin-top: 100px;
+  }
+
+  .wrapper h1 {
+    font-size: 1.25em;
+  }
+
+  .ayuda {
+    font-size: 12px;
+  }
+
+  button {
+    padding: 8px 16px;
+    font-size: 0.9em;
+  }
+}

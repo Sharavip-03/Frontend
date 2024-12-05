@@ -1,0 +1,13 @@
+.navbar-custom1 .navbar-nav {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .espaciocarrusel {
+    padding: 50px; 
+  }
+  
+  .carousel-inner img {
+    max-height: 400px;
+    object-fit: cover;
+  }
