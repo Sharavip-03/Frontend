@@ -1,0 +1,83 @@
+/* Fondo del navbar */
+.navbar-custom {
+  position: sticky; /* Asegura que se mantenga en la parte superior */
+  top: 0;
+  z-index: 1040; /* Asegura que esté encima del contenido */
+  background-color: white !important;
+  transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  box-shadow: 5px 5px 5px 5px #FF8357;
+  display: flex;
+  align-items: center; /* Alinea todos los elementos verticalmente */
+  padding: 0.5rem 1rem;
+}
+
+.navbar-scrolled {
+  background-color: #fac172 !important;
+  box-shadow: 0px 4px 10px #FF8357;
+  border-radius: 0px 0px 50px 50px;
+}
+
+/* Estilo para los Nav.Link */
+.navbar-link {
+  background-color: #FF8357 !important;
+  color: white !important;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-weight: 500;
+  margin-right: 10px;
+  margin-bottom: 30px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center; /* Alinea el texto verticalmente */
+}
+
+.navbar-link:hover {
+  background-color: #FF8357 !important;
+  transform: scale(1.05);
+}
+
+.navbar-link.active {
+  background-color: #ffb397 !important;
+  color: black !important;
+  border: 2px solid #FF8357;
+}
+
+/* Barra de búsqueda */
+.search-bar {
+  border-radius: 25px;
+  border: 1px solid #ddd;
+  padding: 0.5rem 1rem;
+  color: black;
+  margin-right: 10px; /* Espaciado lateral para igualar los links */
+}
+
+.btn-search {
+  border-radius: 25px;
+  background-color: #FF8357 !important;
+  border: none;
+  color: black !important;
+}
+
+.btn-search:hover {
+  background-color: #FF8357 !important;
+}
+
+/* Ajuste para la imagen en el navbar */
+.auth-links {
+  display: flex;
+  margin-bottom: 30px;
+}
+
+.inicioimg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.auth-links a:hover .inicioimg {
+  opacity: 0.8;
+  box-shadow: 5px 5px 5px 5px #FF8357;
+
+}

@@ -1,0 +1,135 @@
+/* INICIO DE ESTILOS DE MATRICES CRUD */
+/* Menú en pantallas grandes */
+.inventariomenu {
+  background-color: #89D5C9;
+  width: 350px;
+  height: 100vh; /* Altura completa en pantallas grandes */
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  color: #FFF;
+  position: relative; /* Fijo en la pantalla */
+  top: 0;
+  left: 0;
+  z-index: 10; /* Asegura que esté sobre el contenido */
+}
+
+.inventariomenu .navbar-nav {
+  width: 100%;
+  color: #FFF;
+}
+
+.inventariomenu .nav-link {
+  color: #FFF;
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  font-size: 1.2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inventariomenu .nav-link img {
+  margin-right: 10px;
+  max-width: 70px;
+}
+
+.inventariomenu .nav-link:hover {
+  color: #E25845;
+  font-weight: 700;
+  background-color: #FF8357;
+  border-radius: 10px;
+}
+
+.container-fluid {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  height: 10vh; /* Para que el contenido tenga 100% de la altura */
+}
+
+/* Estilos para las matrices CRUD */
+.tabstyle {
+  background-color: #FFF9E1;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tabstyle h1,
+.tabstyle h3 {
+  color: #343a40;
+}
+
+.modal-body form {
+  margin-bottom: 20px;
+}
+
+.mb-3 label {
+  font-weight: bold;
+}
+
+.btn {
+  border-radius: 5px;
+}
+
+.table-responsive table {
+  margin-top: 20px;
+}
+
+.container th,
+.container td {
+  vertical-align: middle !important;
+  text-align: center;
+}
+
+/* Contenido principal */
+.inventario {
+  background-color: #FF8357;
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px; /* Evita que el contenido se superponga al menú en pantallas grandes */
+  padding-top: 20px; /* Evita que el contenido se superponga en pantallas pequeñas */
+}
+
+/* Altura del encabezado "Clientes" */
+.inventario h1 {
+  line-height: 50px;
+  margin: 0;
+  text-align: center;
+  color: #FFF;
+}
+
+/* Estilos específicos para pantallas pequeñas */
+@media (max-width: 992px) {
+  .container-fluid {
+      display: flex;
+      flex-direction: column;
+      height: auto; /* Ajuste dinámico en pantallas pequeñas */
+  }
+  .inventariomenu {
+      width: 100%;
+      height: auto; /* Para que el menú ya no esté fijo en pantallas pequeñas */
+      position: relative; /* Cambia la posición a relativa */
+  }
+
+  .inventario {
+      margin-left: 0; /* Elimina el margen izquierdo en pantallas pequeñas */
+      padding-top: 20px; /* Agrega un relleno para evitar que el contenido esté cubierto */
+  }
+}
+
+.navbar-collapse {
+  width: 100%;
+}
+
+.nav-item {
+  text-align: left;
+  margin: 0;
+}
+/* FIN DE ESTILOS DE MATRICES CRUD */

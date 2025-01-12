@@ -1,0 +1,169 @@
+/* Modal */
+.modal-content {
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 100vw; /* Asegúrate de que el modal no se desborde */
+    width: 100%; /* Asegura que el modal se ajuste al ancho del contenedor */
+    margin: 0 auto;
+    box-shadow: 8px 8px 8px #ff8357; /* Sombra sutil */
+  
+  }
+  
+  /* Encabezado */
+  .modal-header {
+    justify-content: center;
+    background-color: #FF8357;
+    color: white;
+    border-bottom: none;
+    box-shadow: 8px 8px 8px #fac172; /* Sombra sutil */
+  
+  }
+  
+  /* Título del modal */
+  .modal-title {
+    font-family: 'Antique Book Cover', sans-serif;
+    font-weight: bold;
+    box-shadow: 8px 8px 8px #fac172; /* Sombra sutil */
+  
+  }
+  
+  /* Estilo de los campos del formulario */
+  .formu {
+    font-family: 'Antique Book Cover', sans-serif;
+    font-weight: bold;
+    color: white;
+    border: 2px solid #2a2f32;
+    padding: 10px;
+    border-radius: 15px;
+    background-color: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 8px #FF8357;
+    transition: 0.3s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 8px 8px 8px #FF8357; /* Sombra sutil */
+  
+  }
+  
+  .formu:hover {
+    backdrop-filter: blur(6px);
+    padding-bottom: 20px;
+  }
+  
+  /* Estilo para los inputs */
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="tel"],
+  input[type="number"] {
+    background-color: #fff9e1;
+    border-radius: 15px;
+    padding: 10px;
+    width: 100%; /* Añadido para que los inputs sean más responsivos */
+    box-sizing: border-box;
+    margin-bottom: 15px; /* Separa los inputs */
+  }
+  
+  /* Estilo de ayuda */
+  .ayuda {
+    display: none;
+    padding: 3px;
+    background-color: #2a2f32;
+    color: #ffffff;
+    border-radius: 10px;
+    font-size: 15px;
+    margin-top: 5px;
+    opacity: 0;
+    font-family: 'Antique Book Cover', sans-serif;
+    transition: opacity 0.3s ease;
+  }
+  
+  .formu:hover .ayuda {
+    display: block;
+    opacity: 1;
+  }
+  
+  /* Estilo de los enlaces */
+  .mensaje {
+    color: white;
+    text-decoration: none;
+    font-family: Arial, sans-serif;
+    font-size: larger;
+  }
+  
+  .mensaje:hover {
+    color: #eedfb4;
+    text-decoration: underline;
+  }
+  
+  .mensaje:active {
+    color: #e16c26;
+  }
+  
+  /* Estilo para los botones */
+  .button {
+    background-color: #fac172;
+    color: black;
+    border: none;
+    border-radius: 15px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    width: 200px; /* Establece el ancho del botón */
+    box-sizing: border-box;
+    display: block; /* Esto permite aplicar un margen automático para centrarlo */
+    margin: 0 auto; /* Centra el botón horizontalmente */
+    box-shadow: 8px 8px 8px #ff8357; /* Sombra sutil */
+  
+  }
+  
+  .button:hover {
+    background-color: #FF8357; /* Un tono más oscuro para el hover */
+    transform: translateY(-2px); /* Efecto de levantamiento */
+    box-shadow: 8px 8px 8px #fac172; /* Sombra sutil */
+  
+  }
+  
+  .button:active {
+    background-color: #d3a15a; /* Un tono aún más oscuro cuando se presiona */
+    transform: translateY(1px); /* Efecto de presionar el botón */
+  }
+  
+  /* Contenedor de los botones */
+  .button-container {
+    display: flex;
+    justify-content: center; /* Centra el contenido horizontalmente */
+    align-items: center; /* Centra el contenido verticalmente */
+    width: 100%;
+    margin-top: 20px; /* Espacio entre los botones y el formulario */
+  }
+  
+  /* Media Queries para pantallas pequeñas */
+  @media (max-width: 768px) {
+    .modal-content {
+      padding: 15px;
+      max-width: 95vw; /* Reduce el máximo ancho en pantallas pequeñas */
+    }
+  
+    .modal-title {
+      font-size: 1.25em;
+    }
+  
+    .formu {
+      font-size: 0.9em;
+      padding: 8px;
+    }
+  
+    .ayuda {
+      font-size: 14px;
+    }
+  
+    button {
+      padding: 10px 16px;
+      font-size: 1.1em;
+    }
+  }
+  
