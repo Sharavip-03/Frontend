@@ -85,9 +85,9 @@ const AdminRoles = () => {
   };
 
   return (
-    <div>
+    <div className="admin-container">
       <Menu />
-      <div className="container mt-5">
+      <div className="content-container">
         <h1>Roles Registrados</h1>
 
         <Button variant="primary" className="mb-3" onClick={handleAddRole}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './client.css'
+import './client.css';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
 import Menu from '../../components/AdminNavbar/admin';
@@ -9,6 +9,7 @@ const apiUrl = 'http://localhost:5000';
 const AdminClientes = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [tiposDoc, setTiposDoc] = useState([]);
+  
   const [showModal, setShowModal] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const [editUser, setEditUser] = useState({
@@ -26,19 +27,19 @@ const AdminClientes = () => {
 
 
   // Primero cargar tipos de documento y luego usuarios
- useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       await fetchTiposDoc(); // Primero obtenemos los tipos de documento
     };
     fetchData();
   }, []);
   
+
   useEffect(() => {
     if (tiposDoc.length > 0) {
-      fetchUsuarios(); // Solo se ejecuta cuando `tiposDoc` ya tiene datos
+      fetchUsuarios();
     }
-  }, [tiposDoc]); // Se ejecuta cada vez que `tiposDoc` cambia
-  
+  }, [tiposDoc]);
 
   const fetchUsuarios = async () => {
     try {
@@ -52,22 +53,29 @@ const AdminClientes = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Asegurarse de que cada usuario tenga un estado definido
       const usuariosConTipoDoc = response.data.clientes.map(usuario => {
         const tipoDocumento = tiposDoc.find(t => t.id_TipoDocumento === parseInt(usuario.tipo_doc));
         return {
           ...usuario,
           tipo_doc_nombre: tipoDocumento ? tipoDocumento.Nombre : 'N/A',
-          estado: usuario.estado || 'Activo' // Aseguramos que siempre haya un estado
+          estado: usuario.estado || 'Activo'
         };
       });
-      
+
       setUsuarios(usuariosConTipoDoc);
     } catch (error) {
-      console.error("Error al obtener los usuarios:", error.response?.data || error.message);
+      console.error("Error al obtener los usuarios:", error);
     }
   };
 
+  const fetchTiposDoc = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/tipo_doc`);
+      setTiposDoc(response.data.tipo_docs || response.data);
+    } catch (error) {
+      console.error("Error al obtener los tipos de documento:", error);
+    }
+  };
 
   const handleAddUser = () => {
     setIsNewUser(true);  // Indicamos que es un nuevo usuario
@@ -179,24 +187,14 @@ const AdminClientes = () => {
       await fetchUsuarios();
     }
   };
-  const fetchTiposDoc = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/tipo_doc`);
-      const tiposDocData = response.data.tipo_docs || response.data;
-      setTiposDoc(tiposDocData);
-    } catch (error) {
-      console.error("Error al obtener los tipos de documento:", error);
-    }
-  };
-
 
   return (
-    <div>
+    <div className="admin-container">
       <Menu />
-      <div className="container mt-5">
+      <div className="content-container">
         <h1>Usuarios Registrados</h1>
-        
-        <Button variant="primary" className="mb-3" onClick={handleAddUser}>
+
+        <Button variant="primary" className="mb-3"  onClick={handleAddUser}>
           Agregar Usuario
         </Button>
 
