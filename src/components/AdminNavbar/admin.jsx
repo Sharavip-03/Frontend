@@ -73,6 +73,7 @@ const Menu = () => {
             icon={<FaBone />} 
             text="Productos" 
             subItems={[
+              { name: "Productos", path: "/admin/preproduct" },
               { name: "Categorías", path: "/admin/categoria" },
               { name: "Marca", path: "/admin/marca" }
             ]} 
@@ -81,24 +82,23 @@ const Menu = () => {
             icon={<FaPaw />} 
             text="Animales" 
             subItems={[
-              { name: "Gatos", path: "/admin/gatos" },
-              { name: "Perros", path: "/admin/perros" },
-              { name: "Otros Animales", path: "/admin/otros-animales" }
+              { name: "Animales", path: "/admin/animales" }
             ]} 
           />
           <SidebarItem 
             icon={<FaShoppingCart />} 
             text="Ventas" 
             subItems={[
+              { name: "Descuentos", path: "/admin/descuentos" },
               { name: "Reportes", path: "/admin/reportes" },
-              { name: "Métodos de pago", path: "/admin/metodos-pago" }
+              { name: "Formularios de pago", path: "/admin/metodos-pago" }
             ]} 
           />
           <SidebarItem 
             icon={<FaFileInvoice />} 
             text="Facturas" 
             subItems={[
-              { name: "Detalle Facturas", path: "/admin/detalle-facturas" }
+              { name: "Facturas", path: "/admin/facturas" }
             ]} 
           />
         </nav>
