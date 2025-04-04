@@ -24,9 +24,8 @@ const PreaccesoProductos = () => {
   };
 
   const handleVerProductos = (id_animal) => {
-    navigate(`/admin/productos/${id_animal}`);
+    navigate(`/admin/productos/${id_animal}`, { state: { idAnimalSeleccionado: id_animal } });
   };
-  
 
   return (
     <div className="admin-container">

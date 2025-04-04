@@ -72,6 +72,14 @@
   background-color: #ffb17a;
 }
 
+
+@media (max-width: 768px) {
+  .admin-content {
+    margin-left: 0;
+    padding-top: 60px; /* Espacio para el menú móvil */
+  }
+}
+
 /* Botón de salida */
 .sidebar-exit {
   margin-top: auto;

@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form } from 'react-bootstrap';
+import { Table, Button, Modal, Form, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Menu from '../../../components/AdminNavbar/admin';
 
 const apiUrl = 'http://localhost:5000';
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
 
-const AdminProductos = ({ idAnimalSeleccionado }) => {
+const AdminProductos = () => {
+  const { idAnimal } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [marcas, setMarcas] = useState([]);
@@ -23,24 +27,38 @@ const AdminProductos = ({ idAnimalSeleccionado }) => {
     estado: 'Disponible',
     id_categoria: '',
     id_marca: '',
-    id_animal: idAnimalSeleccionado
+    id_animal: idAnimal || location.state?.idAnimalSeleccionado || ''
   });
 
   useEffect(() => {
-    fetchProductos();
-    fetchCategorias();
-    fetchMarcas();
-  }, [idAnimalSeleccionado]);
+    if (idAnimal || location.state?.idAnimalSeleccionado) {
+      fetchProductos();
+      fetchCategorias();
+      fetchMarcas();
+    }
+  }, [idAnimal, location.state?.idAnimalSeleccionado]);
 
   const fetchProductos = async () => {
     try {
       const response = await axios.get(`${apiUrl}/PrivProd`);
-      const productosFiltrados = response.data.productos.filter(p => p.id_animal === idAnimalSeleccionado);
+      const animalId = idAnimal || location.state?.idAnimalSeleccionado;
+      
+      // Filtrado seguro con conversión a número
+      const productosFiltrados = response.data.productos.filter(p => 
+        parseInt(p.id_animal) === parseInt(animalId)
+      );
+      
       setProductos(productosFiltrados);
     } catch (error) {
       console.error("Error al obtener los productos:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudieron cargar los productos"
+      });
     }
   };
+
 
   const fetchCategorias = async () => {
     try {
@@ -62,7 +80,18 @@ const AdminProductos = ({ idAnimalSeleccionado }) => {
 
   const handleAddProducto = () => {
     setIsNewProducto(true);
-    setEditProducto({ id_producto: '', nombre: '', descripcion: '', precio: '', stock: '', imagen: '', estado: 'Disponible', id_categoria: '', id_marca: '', id_animal: idAnimalSeleccionado });
+    setEditProducto({ 
+      id_producto: '', 
+      nombre: '', 
+      descripcion: '', 
+      precio: '', 
+      stock: '', 
+      imagen: '', 
+      estado: 'Disponible', 
+      id_categoria: '', 
+      id_marca: '', 
+      id_animal: idAnimal || location.state?.idAnimalSeleccionado 
+    });
     setShowModal(true);
   };
 
@@ -81,8 +110,6 @@ const AdminProductos = ({ idAnimalSeleccionado }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setEditProducto((prev) => ({ ...prev, file }));
-
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", cloudinaryPreset);
@@ -90,19 +117,37 @@ const AdminProductos = ({ idAnimalSeleccionado }) => {
     try {
       const response = await axios.post(cloudinaryUploadUrl, formData);
       const imageUrl = response.data.secure_url;
-      setEditProducto((prev) => ({ ...prev, imagen: imageUrl }));
+      setEditProducto(prev => ({ ...prev, imagen: imageUrl }));
     } catch (error) {
       console.error("Error al subir la imagen:", error);
       alert("Error al subir la imagen");
     }
   };
 
+  const handleSubmit = async () => {
+    try {
+      if (isNewProducto) {
+        await axios.post(`${apiUrl}/PrivProd`, editProducto);
+      } else {
+        await axios.put(`${apiUrl}/PrivProd/${editProducto.id_producto}`, editProducto);
+      }
+      setShowModal(false);
+      fetchProductos();
+    } catch (error) {
+      console.error("Error al guardar el producto:", error);
+      alert("Error al guardar el producto");
+    }
+  };
   return (
     <div className="admin-container">
       <Menu />
       <div className="content-container">
-        <h1>Productos Registrados</h1>
-        <Button variant="primary" className="mb-3" onClick={handleAddProducto}>
+        <Button 
+          variant="primary" 
+          className="mb-3" 
+          onClick={handleAddProducto}
+          disabled={!idAnimal && !location.state?.idAnimalSeleccionado}
+        >
           Agregar Producto
         </Button>
         <Table striped bordered hover responsive>
@@ -127,7 +172,7 @@ const AdminProductos = ({ idAnimalSeleccionado }) => {
                   <td>{producto.id_producto}</td>
                   <td>{producto.nombre}</td>
                   <td>{producto.descripcion || 'Sin descripción'}</td>
-                  <td>{producto.precio}</td>
+                  <td>${producto.precio}</td>
                   <td>{producto.stock}</td>
                   <td>{producto.estado}</td>
                   <td>
@@ -137,8 +182,12 @@ const AdminProductos = ({ idAnimalSeleccionado }) => {
                       style={{ width: "100px", height: "auto" }}
                     />
                   </td>
-                  <td>{producto.categoria}</td>
-                  <td>{producto.marca}</td>
+                  <td>
+                    {categorias.find(c => c.id_categoria === producto.id_categoria)?.nombre || 'N/A'}
+                  </td>
+                  <td>
+                    {marcas.find(m => m.id_marca === producto.id_marca)?.nombre || 'N/A'}
+                  </td>
                   <td>
                     <Button variant="warning" className="me-2" onClick={() => handleEditProducto(producto)}>
                       Editar
@@ -148,59 +197,139 @@ const AdminProductos = ({ idAnimalSeleccionado }) => {
               ))
             ) : (
               <tr>
-                <td colSpan="10" className="text-center">No hay productos disponibles.</td>
+                <td colSpan="10" className="text-center">
+                  No hay productos disponibles. {idAnimal || location.state?.idAnimalSeleccionado ? 
+                  "Puedes agregar uno nuevo usando el botón 'Agregar Producto'" : 
+                  "Selecciona un animal para ver sus productos"}
+                </td>
               </tr>
             )}
           </tbody>
         </Table>
 
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+
+
+        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
           <Modal.Header closeButton>
             <Modal.Title>{isNewProducto ? 'Agregar Producto' : 'Editar Producto'}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
               <Form.Group className="mb-3">
-                <Form.Label>Nombre</Form.Label>
-                <Form.Control type="text" name="nombre" value={editProducto.nombre} onChange={handleInputChange} required />
+                <Form.Label>Nombre *</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  name="nombre" 
+                  value={editProducto.nombre} 
+                  onChange={handleInputChange} 
+                  required 
+                />
               </Form.Group>
+              
               <Form.Group className="mb-3">
                 <Form.Label>Descripción</Form.Label>
-                <Form.Control type="text" name="descripcion" value={editProducto.descripcion} onChange={handleInputChange} />
+                <Form.Control 
+                  as="textarea" 
+                  rows={3}
+                  name="descripcion" 
+                  value={editProducto.descripcion} 
+                  onChange={handleInputChange} 
+                />
               </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Precio</Form.Label>
-                <Form.Control type="number" name="precio" value={editProducto.precio} onChange={handleInputChange} required />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Stock</Form.Label>
-                <Form.Control type="number" name="stock" value={editProducto.stock} onChange={handleInputChange} required />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Categoría</Form.Label>
-                <Form.Select name="id_categoria" value={editProducto.id_categoria} onChange={handleInputChange}>
-                  <option value="">Seleccionar Categoría</option>
-                  {categorias.map(cat => (
-                    <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre}</option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Marca</Form.Label>
-                <Form.Select name="id_marca" value={editProducto.id_marca} onChange={handleInputChange}>
-                  <option value="">Seleccionar Marca</option>
-                  {marcas.map(marca => (
-                    <option key={marca.id_marca} value={marca.id_marca}>{marca.nombre}</option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
+              
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Precio *</Form.Label>
+                    <Form.Control 
+                      type="number" 
+                      name="precio" 
+                      value={editProducto.precio} 
+                      onChange={handleInputChange} 
+                      required 
+                      min="0"
+                      step="0.01"
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Stock *</Form.Label>
+                    <Form.Control 
+                      type="number" 
+                      name="stock" 
+                      value={editProducto.stock} 
+                      onChange={handleInputChange} 
+                      required 
+                      min="0"
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+              
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Categoría *</Form.Label>
+                    <Form.Select 
+                      name="id_categoria" 
+                      value={editProducto.id_categoria} 
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Seleccionar Categoría</option>
+                      {categorias.map(cat => (
+                        <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre}</option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Marca *</Form.Label>
+                    <Form.Select 
+                      name="id_marca" 
+                      value={editProducto.id_marca} 
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Seleccionar Marca</option>
+                      {marcas.map(marca => (
+                        <option key={marca.id_marca} value={marca.id_marca}>{marca.nombre}</option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+              </Row>
+              
               <Form.Group className="mb-3">
                 <Form.Label>Imagen</Form.Label>
-                <Form.Control type="file" accept="image/*" onChange={handleImageUpload} />
-                {editProducto.imagen && <img src={editProducto.imagen} alt="Vista previa" style={{ width: "100px", height: "auto" }} />}
+                <Form.Control 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageUpload} 
+                />
+                {editProducto.imagen && (
+                  <div className="mt-2">
+                    <img 
+                      src={editProducto.imagen} 
+                      alt="Vista previa" 
+                      style={{ width: "100px", height: "auto" }} 
+                      className="img-thumbnail"
+                    />
+                  </div>
+                )}
               </Form.Group>
             </Form>
           </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="primary" onClick={handleSubmit}>
+              {isNewProducto ? 'Agregar' : 'Guardar Cambios'}
+            </Button>
+          </Modal.Footer>
         </Modal>
       </div>
     </div>

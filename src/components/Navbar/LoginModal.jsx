@@ -40,12 +40,11 @@ const LoginModal = ({ show, handleClose }) => {
   
       const data = await response.json();
       setUserId(data.usuario);
-
+  
       if (data.token_de_acceso) {
         localStorage.setItem("token", data.token_de_acceso);
         localStorage.setItem("id", data.usuario);
         localStorage.setItem("isLogged", true);
-
   
         Swal.fire({
           icon: "success",
@@ -53,12 +52,12 @@ const LoginModal = ({ show, handleClose }) => {
           showConfirmButton: false,
           timer: 1500,
         });
-
+  
         handleClose();
-
-        // Verificar si el usuario es el superadmin
-        if (email === "paola01@example.com" && contrasena === "El1234Escondite5656Animal42224235") {
-          navigate("/admin"); // Si es superadmin
+  
+        // Redirección basada en el tipo de usuario
+        if (email === "paola01@gmail.com" && contrasena === "El1234Escondite5656Animal42224235") {
+          navigate("/admin/inventario"); // Redirige al inventario para admin
         } else {
           setUserId(data.usuario)
           console.log(userId)
@@ -70,8 +69,7 @@ const LoginModal = ({ show, handleClose }) => {
           title: "Error",
           text: data.mensaje || "Email o contraseña incorrectos",
         });
-      }      
-
+      }
     } catch (error) {
       console.error("Error en la solicitud al servidor", error);
       Swal.fire({
