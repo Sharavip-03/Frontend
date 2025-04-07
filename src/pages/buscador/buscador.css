@@ -1,0 +1,50 @@
+/* Filtros horizontales */
+.filter-bar {
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  /* Tarjetas de productos */
+  .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  }
+  
+  .card-img-top {
+    object-fit: contain;
+    background-color: #f8f9fa;
+    padding: 10px;
+  }
+  
+  /* Botones de filtro */
+  .select {
+    background-color: #fff9e1;
+    border: 2px solid #FF8357;
+    border-radius: 15px;
+    padding: 8px 15px;
+    min-width: 180px;
+  }
+  
+  /* Rango de precios */
+  input[type="range"] {
+    width: 100%;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .filter-bar .form-group {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    
+    .filter-bar .btn {
+      width: 100%;
+    }
+  }

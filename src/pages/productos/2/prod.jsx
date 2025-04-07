@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Menu from '../../../components/AdminNavbar/admin';
 
@@ -8,10 +9,33 @@ const apiUrl = 'http://localhost:5000';
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
 
+axios.interceptors.request.use(config => {
+  if (config.url.startsWith(apiUrl)) {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+}, error => {
+  return Promise.reject(error);
+});
+
+axios.interceptors.response.use(response => response, error => {
+  if (error.response?.status === 401) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("id");
+    localStorage.removeItem("isLogged");
+    window.location.href = "/";
+  }
+  return Promise.reject(error);
+});
+
 const AdminProductos = () => {
   const { idAnimal } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [animal, setAnimal] = useState(null);
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [marcas, setMarcas] = useState([]);
@@ -32,12 +56,23 @@ const AdminProductos = () => {
 
   useEffect(() => {
     if (idAnimal || location.state?.idAnimalSeleccionado) {
+      fetchAnimal(); 
       fetchProductos();
       fetchCategorias();
       fetchMarcas();
     }
   }, [idAnimal, location.state?.idAnimalSeleccionado]);
 
+  const fetchAnimal = async () => {
+    try {
+      const animalId = idAnimal || location.state?.idAnimalSeleccionado;
+      const response = await axios.get(`${apiUrl}/animalesProd/${animalId}`);
+      console.log("Respuesta del animal:", response.data); // Agrega esto
+      setAnimal(response.data);
+    } catch (error) {
+      console.error("Error al obtener el animal:", error);
+    }
+  };
   const fetchProductos = async () => {
     try {
       const response = await axios.get(`${apiUrl}/PrivProd`);
@@ -106,42 +141,108 @@ const AdminProductos = () => {
     setEditProducto({ ...editProducto, [name]: value });
   };
 
+
+  const handleSubmit = async () => {
+    if (!editProducto.nombre || !editProducto.precio || !editProducto.stock || 
+        !editProducto.id_categoria || !editProducto.id_marca || !editProducto.id_animal) {
+      Swal.fire({
+        icon: "warning",
+        title: "Campos incompletos",
+        text: "Por favor complete todos los campos requeridos",
+      });
+      return;
+    }
+  
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      
+      // Agregar todos los campos al FormData
+      formData.append('nombre', editProducto.nombre);
+      formData.append('descripcion', editProducto.descripcion);
+      formData.append('precio', editProducto.precio);
+      formData.append('stock', editProducto.stock);
+      formData.append('estado', editProducto.estado);
+      formData.append('id_categoria', editProducto.id_categoria);
+      formData.append('id_marca', editProducto.id_marca);
+      formData.append('id_animal', editProducto.id_animal);
+      
+      // Si hay una imagen nueva (para edición)
+      if (editProducto.imagenFile) {
+        formData.append('imagen', editProducto.imagenFile);
+      }
+  
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      };
+  
+      if (isNewProducto) {
+        await axios.post(`${apiUrl}/PrivProd`, formData, config);
+      } else {
+        await axios.put(`${apiUrl}/PrivProd/${editProducto.id_producto}`, formData, config);
+      }
+      
+      setShowModal(false);
+      fetchProductos();
+      
+      Swal.fire({
+        icon: "success",
+        title: "Operación exitosa",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch (error) {
+      console.error("Error al guardar el producto:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.response?.data?.message || "Error al guardar el producto",
+      });
+    }
+  };
+  
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
+  
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", cloudinaryPreset);
-
+  
     try {
-      const response = await axios.post(cloudinaryUploadUrl, formData);
+      // Crear una nueva instancia de axios sin interceptores para esta solicitud
+      const cloudinaryAxios = axios.create();
+      const response = await cloudinaryAxios.post(cloudinaryUploadUrl, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
       const imageUrl = response.data.secure_url;
-      setEditProducto(prev => ({ ...prev, imagen: imageUrl }));
+      setEditProducto(prev => ({ 
+        ...prev, 
+        imagen: imageUrl,
+        imagenFile: file
+      }));
     } catch (error) {
       console.error("Error al subir la imagen:", error);
-      alert("Error al subir la imagen");
-    }
-  };
-
-  const handleSubmit = async () => {
-    try {
-      if (isNewProducto) {
-        await axios.post(`${apiUrl}/PrivProd`, editProducto);
-      } else {
-        await axios.put(`${apiUrl}/PrivProd/${editProducto.id_producto}`, editProducto);
-      }
-      setShowModal(false);
-      fetchProductos();
-    } catch (error) {
-      console.error("Error al guardar el producto:", error);
-      alert("Error al guardar el producto");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error al subir la imagen. Por favor intenta con otra imagen.",
+      });
     }
   };
   return (
     <div className="admin-container">
       <Menu />
       <div className="content-container">
+      <h1>
+        Productos Registrados {animal?.nombre && `- ${animal.nombre}`}
+      </h1>
         <Button 
           variant="primary" 
           className="mb-3" 
@@ -215,6 +316,7 @@ const AdminProductos = () => {
           </Modal.Header>
           <Modal.Body>
             <Form>
+              {/* Campos del formulario */}
               <Form.Group className="mb-3">
                 <Form.Label>Nombre *</Form.Label>
                 <Form.Control 

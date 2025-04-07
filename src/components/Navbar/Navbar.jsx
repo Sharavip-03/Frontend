@@ -7,6 +7,7 @@ import AccountCircleSharpIcon from '@mui/icons-material/AccountCircleSharp';
 import ShoppingCartTwoToneIcon from '@mui/icons-material/ShoppingCartTwoTone';
 import Perfil from "../../pages/principal/perfil"; // Importamos el componente
 import Carro from "../../pages/principal/carroCom" // Importa el componente Carro
+import { SearchBar } from "../../pages/buscador/buscador.jsx"; // Importa el componente de búsqueda
 
 export const NavBar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -39,12 +40,10 @@ export const NavBar = () => {
 
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
-              <Form className="d-flex align-items-center ms-auto">
-                <Form.Control type="search" placeholder="Buscar" className="search-bar me-2" aria-label="Buscar" />
-                <Button variant="outline-light" className="btn-search">Buscar</Button>
-              </Form>
-
-              <div className="auth-links">
+                <div className="d-flex align-items-center ms-auto">
+                  <SearchBar />
+                </div>
+                <div className="auth-links">
                 <button
                   onClick={() => {
                     if (isLogged) {

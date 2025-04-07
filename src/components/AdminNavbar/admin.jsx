@@ -73,7 +73,7 @@ const Menu = () => {
             icon={<FaBone />} 
             text="Productos" 
             subItems={[
-              { name: "Inventario", path: "/admin/preproduct" }, 
+              { name: "Inventario", path: "/admin/inventario" }, // Cambiado a /admin/inventario
               { name: "Categorías", path: "/admin/categoria" },
               { name: "Marca", path: "/admin/marca" }
             ]} 

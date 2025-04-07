@@ -57,7 +57,7 @@ const LoginModal = ({ show, handleClose }) => {
   
         // Redirección basada en el tipo de usuario
         if (email === "paola01@gmail.com" && contrasena === "El1234Escondite5656Animal42224235") {
-          navigate("/admin/inventario"); // Redirige al inventario para admin
+          navigate("/admin/menu"); // Redirige al inventario para admin
         } else {
           setUserId(data.usuario)
           console.log(userId)
