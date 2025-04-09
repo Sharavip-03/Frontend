@@ -90,8 +90,6 @@ const Menu = () => {
             text="Ventas" 
             subItems={[
               { name: "Descuentos", path: "/admin/descuentos" },
-              { name: "Reportes", path: "/admin/reportes" },
-              { name: "Formularios de pago", path: "/admin/metodos-pago" }
             ]} 
           />
           <SidebarItem 

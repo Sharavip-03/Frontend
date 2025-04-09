@@ -327,8 +327,8 @@ const FormularioPago = () => {
                                             Por favor realiza la transferencia a la siguiente cuenta:<br />
                                             Banco: TuBanco<br />
                                             Cuenta: 123456789<br />
-                                            CLABE: 012345678912345678<br />
-                                            A nombre de: TuEmpresa SA de CV<br />
+                                            CLAVE: 012345678912345678<br />
+                                            A nombre de: El Escondite Animal<br />
                                             <strong>Importante:</strong> Incluye el número de factura como referencia.
                                         </Alert>
                                     )}

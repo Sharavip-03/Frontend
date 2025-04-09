@@ -125,25 +125,6 @@ const Perfil = () => {
           <p className="perfil-dato">Dirección: {user.direccion}</p>
 
           <div className="perfil-contraseña-container">
-            {editando ? (
-              <div className="perfil-contraseña-edit">
-                <input
-                  type="password"
-                  value={nuevaContraseña}
-                  onChange={(e) => setNuevaContraseña(e.target.value)}
-                  placeholder="Nueva contraseña"
-                />
-                <button onClick={actualizarContraseña}>Guardar</button>
-                <button onClick={() => setEditando(false)}>Cancelar</button>
-              </div>
-            ) : (
-              <button className="perfil-boton" onClick={() => setEditando(true)}>
-                Cambiar contraseña
-              </button>
-
-              
-            )}
-
           <button type="button" className="perfil-boton" onClick={cerrarSesion} aria-label="Close">
             Cerrar sesión
             </button>

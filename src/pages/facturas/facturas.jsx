@@ -9,7 +9,6 @@ const AdminFacturas = () => {
   const [facturas, setFacturas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [isNewFactura, setIsNewFactura] = useState(false);
   const [editFactura, setEditFactura] = useState({
     id_factura: '',
     fecha_factura: '',
@@ -21,44 +20,42 @@ const AdminFacturas = () => {
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [clientesMap, setClientesMap] = useState({});
-
 
   useEffect(() => {
     const fetchData = async () => {
-        try {
-          setLoading(true);
-          const token = localStorage.getItem('token');
-          
-          // Obtener facturas con datos expandidos del cliente
-          const facturasResponse = await axios.get(`${apiUrl}/PrivFactura?expand=cliente`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          // Obtener clientes por separado para el dropdown
-          const clientesResponse = await axios.get(`${apiUrl}/Priv`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          setFacturas(facturasResponse.data.facturas || []);
-          setClientes(clientesResponse.data.usuarios || []);
-          setError(null);
-        } catch (err) {
-          console.error("Error fetching data:", err);
-          setError(err.response?.data?.message || "Error al cargar los datos");
-          setFacturas([]);
-          setClientes([]);
-        } finally {
-          setLoading(false);
-        }
-      };
-    
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        
+        // Obtener facturas con datos expandidos del cliente
+        const facturasResponse = await axios.get(`${apiUrl}/PrivFactura?expand=cliente`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        // Obtener clientes por separado
+        const clientesResponse = await axios.get(`${apiUrl}/Priv`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        setFacturas(facturasResponse.data.facturas || []);
+        setClientes(clientesResponse.data.usuarios || []);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError(err.response?.data?.message || "Error al cargar los datos");
+        setFacturas([]);
+        setClientes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
     fetchData();
   }, []);
 
   const fetchFacturas = async () => {
     try {
-      const token = localStorage.getItem('token'); // Obtener token de autenticación
+      const token = localStorage.getItem('token');
       const response = await axios.get(`${apiUrl}/PrivFactura`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -80,35 +77,12 @@ const AdminFacturas = () => {
     }
   };
 
-  const fetchClientes = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/Priv`);
-      setClientes(response.data.usuarios || []);
-    } catch (error) {
-      console.error("Error al obtener los clientes:", error);
-    }
-  };
-
-  const handleAddFactura = () => {
-    setIsNewFactura(true);
-    setEditFactura({
-      id_factura: '',
-      fecha_factura: new Date().toISOString().slice(0, 16),
-      total: '',
-      iva_total: '',
-      estado: 'Pendiente',
-      fecha_vencimiento: '',
-      id_cliente: ''
-    });
-    setShowModal(true);
-  };
-
   const handleEditFactura = (factura) => {
-    setIsNewFactura(false);
     setEditFactura({ 
       ...factura,
       fecha_factura: factura.fecha_factura ? factura.fecha_factura.slice(0, 16) : '',
-      fecha_vencimiento: factura.fecha_vencimiento ? factura.fecha_vencimiento.slice(0, 16) : ''
+      fecha_vencimiento: factura.fecha_vencimiento ? factura.fecha_vencimiento.slice(0, 16) : '',
+      cliente: factura.cliente || clientes.find(c => c.id_usuario === factura.id_cliente)
     });
     setShowModal(true);
   };
@@ -121,27 +95,46 @@ const AdminFacturas = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (isNewFactura) {
-        await axios.post(`${apiUrl}/PrivFactura`, editFactura);
-      } else {
-        await axios.put(`${apiUrl}/PrivFactura/${editFactura.id_factura}`, editFactura);
-      }
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      await axios.put(`${apiUrl}/PrivFactura/${editFactura.id_factura}`, editFactura, config);
       setShowModal(false);
       fetchFacturas();
     } catch (error) {
       console.error("Error al guardar la factura:", error);
+      setError(error.response?.data?.message || "Error al guardar la factura");
     }
   };
-
+  
   const handleCancelarFactura = async (id_factura) => {
     try {
-      await axios.patch(`${apiUrl}/PrivFactura/${id_factura}`);
+      const token = localStorage.getItem('token');
+      await axios.patch(`${apiUrl}/PrivFactura/${id_factura}`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       fetchFacturas();
     } catch (error) {
       console.error("Error al cancelar la factura:", error);
+      setError(error.response?.data?.message || "Error al cancelar la factura");
     }
   };
-
+  
+  const getClienteNombre = (id_cliente, factura) => {
+    if (factura.cliente) {
+      return `${factura.cliente.nombres} ${factura.cliente.apellidos}`;
+    }
+    
+    const cliente = clientes.find(c => c.id_usuario == id_cliente);
+    return cliente ? `${cliente.nombres} ${cliente.apellidos}` : `Cliente ID: ${id_cliente}`;
+  };
+  
   const getEstadoBadge = (estado) => {
     switch (estado) {
       case 'Pagada':
@@ -155,20 +148,9 @@ const AdminFacturas = () => {
     }
   };
 
-  const getClienteNombre = (id_cliente) => {
-    // Verificar si el cliente viene en los datos de la factura
-    if (facturas.cliente) {
-      return `${facturas.cliente.nombres} ${facturas.cliente.apellidos}`;
-    }
-    
-    // Si no, buscar en la lista de clientes
-    const cliente = clientes.find(c => c.id_usuario == id_cliente); // Nota el == en lugar de ===
-    return cliente ? `${cliente.nombres} ${cliente.apellidos}` : `Cliente ID: ${id_cliente}`;
-  };
   if (loading) {
     return <div className="text-center mt-5">Cargando...</div>;
   }
-  
 
   if (error) {
     return (
@@ -187,15 +169,11 @@ const AdminFacturas = () => {
     );
   }
 
-
   return (
     <div className="admin-container">
       <Menu />
       <div className="content-container">
         <h1>Facturas Registradas</h1>
-        <Button variant="primary" className="mb-3" onClick={handleAddFactura}>
-          Crear Factura
-        </Button>
         <Table striped bordered hover responsive>
           <thead>
             <tr>
@@ -215,7 +193,7 @@ const AdminFacturas = () => {
                 <tr key={factura.id_factura}>
                   <td>{factura.id_factura}</td>
                   <td>{factura.fecha_factura ? new Date(factura.fecha_factura).toLocaleString() : 'N/A'}</td>
-                  <td>{getClienteNombre(factura.id_cliente)}</td>
+                  <td>{getClienteNombre(factura.id_cliente, factura)}</td>
                   <td>${factura.total?.toLocaleString() || '0'}</td>
                   <td>${factura.iva_total?.toLocaleString() || '0'}</td>
                   <td>{getEstadoBadge(factura.estado)}</td>
@@ -242,7 +220,7 @@ const AdminFacturas = () => {
 
         <Modal show={showModal} onHide={() => setShowModal(false)}>
           <Modal.Header closeButton>
-            <Modal.Title>{isNewFactura ? 'Crear Factura' : 'Editar Factura'}</Modal.Title>
+            <Modal.Title>Editar Factura</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form onSubmit={handleSubmit}>
@@ -308,19 +286,20 @@ const AdminFacturas = () => {
               
               <Form.Group className="mb-3">
                 <Form.Label>Cliente</Form.Label>
-                <Form.Select
+                <Form.Control
+                  type="text"
+                  value={
+                    editFactura.cliente 
+                      ? `${editFactura.cliente.nombres} ${editFactura.cliente.apellidos}`
+                      : `Cliente ID: ${editFactura.id_cliente}`
+                  }
+                  readOnly
+                />
+                <Form.Control
+                  type="hidden"
                   name="id_cliente"
                   value={editFactura.id_cliente}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Seleccione un cliente</option>
-                  {clientes.map(cliente => (
-                    <option key={cliente.id_usuario} value={cliente.id_usuario}>
-                      {cliente.nombres} {cliente.apellidos}
-                    </option>
-                  ))}
-                </Form.Select>
+                />
               </Form.Group>
               
               <div className="d-flex justify-content-end">
@@ -328,7 +307,7 @@ const AdminFacturas = () => {
                   Cancelar
                 </Button>
                 <Button variant="primary" type="submit">
-                  {isNewFactura ? 'Crear Factura' : 'Guardar Cambios'}
+                  Guardar Cambios
                 </Button>
               </div>
             </Form>
