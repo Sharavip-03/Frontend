@@ -17,7 +17,7 @@ const SearchResults = () => {
     const [categoryFilter, setCategoryFilter] = useState("");
     const [brandFilter, setBrandFilter] = useState("");
     const [animalFilter, setAnimalFilter] = useState("");
-    const [priceRange, setPriceRange] = useState([0, 1000000]); // Aumenté el rango máximo
+    const [priceRange, setPriceRange] = useState([0, 1000000]);
 
     // Datos para filtros
     const [categories, setCategories] = useState([]);
@@ -25,6 +25,47 @@ const SearchResults = () => {
     const [animals, setAnimals] = useState([]);
 
     const urlAPI = 'http://127.0.0.1:5000';
+
+    const [cartItems, setCartItems] = useState([]);
+
+    const addToCart = async (product) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert("Por favor inicia sesión para agregar productos al carrito");
+                return;
+            }
+
+            const response = await axios.post(`${urlAPI}/Carrito/agregar`, {
+                id_usuario: localStorage.getItem('id'),
+                id_producto: product.id_producto,
+                cantidad: 1
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            setCartItems(prevItems => {
+                const existingItem = prevItems.find(item => item.id_producto === product.id_producto);
+                if (existingItem) {
+                    return prevItems.map(item =>
+                        item.id_producto === product.id_producto 
+                            ? { ...item, cantidad: item.cantidad + 1 } 
+                            : item
+                    );
+                } else {
+                    return [...prevItems, { ...product, cantidad: 1 }];
+                }
+            });
+
+            alert("Producto agregado al carrito");
+        } catch (error) {
+            console.error("Error al agregar al carrito:", error);
+            alert("Error al agregar producto al carrito");
+        }
+    };
+
 
     // Función de búsqueda optimizada
     const searchProducts = (products, query) => {
@@ -205,41 +246,70 @@ const SearchResults = () => {
                     </div>
                 ) : (
                     <Row xs={1} md={2} lg={3} className="g-4">
-                        {filteredProducts.map(product => (
-                            <Col key={product.id_producto}>
-                                <Card className="h-100 shadow-sm">
-                                    <Card.Img 
-                                        variant="top" 
-                                        src={product.imagen} 
-                                        style={{ height: "200px", objectFit: "cover" }}
-                                        className="p-2"
-                                        onError={(e) => {
-                                            e.target.src = "https://via.placeholder.com/300";
-                                        }}
-                                    />
-                                    <Card.Body className="d-flex flex-column">
-                                        <Card.Title>{product.nombre}</Card.Title>
-                                        <Card.Subtitle className="mb-2 text-muted">
-                                            {product.marca} - {product.categoria}
-                                        </Card.Subtitle>
-                                        <Card.Text className="flex-grow-1">
-                                            {product.descripcion?.substring(0, 100)}...
-                                        </Card.Text>
-                                        <div className="d-flex justify-content-between align-items-center mt-3">
-                                            <span className="h5 text-primary">${product.precio.toLocaleString()}</span>
-                                            <Button variant="primary">
-                                                Ver detalles
-                                            </Button>
+                    {filteredProducts.map(product => (
+                        <Col key={product.id_producto}>
+                            <Card className="h-100 shadow-sm">
+                                <Card.Img 
+                                    variant="top" 
+                                    src={product.imagen} 
+                                    style={{ height: "200px", objectFit: "cover" }}
+                                    className="p-2"
+                                    onError={(e) => {
+                                        e.target.src = "https://via.placeholder.com/300";
+                                    }}
+                                />
+                                <Card.Body className="d-flex flex-column">
+                                    <Card.Title>{product.nombre}</Card.Title>
+                                    <Card.Subtitle className="mb-2 text-muted">
+                                        {product.marca} - {product.categoria}
+                                    </Card.Subtitle>
+                                    <Card.Text className="flex-grow-1">
+                                        {product.descripcion?.substring(0, 100)}...
+                                    </Card.Text>
+                                    <div className="d-flex justify-content-between align-items-center mt-3">
+                                        <div>
+                                        {product.precio_descuento ? (
+                                            <>
+                                            <span className="h5 text-danger me-2">
+                                                ${product.precio_descuento.toLocaleString()}
+                                            </span>
+                                            <span className="text-decoration-line-through text-muted">
+                                                ${product.precio.toLocaleString()}
+                                            </span>
+                                            </>
+                                        ) : (
+                                            <span className="h5 text-primary">
+                                            ${product.precio.toLocaleString()}
+                                            </span>
+                                        )}
                                         </div>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        ))}
-                    </Row>
-                )}
-            </Container>
-        </>
-    );
+                                    </div>
+                                    <div className="d-flex justify-content-between mt-3">
+                                        <Button 
+                                            variant="outline-primary"
+                                            onClick={() => {
+                                                // Aquí iría la lógica para ver detalles
+                                                console.log("Ver detalles de:", product.id_producto);
+                                            }}
+                                        >
+                                            Ver detalles
+                                        </Button>
+                                        <Button 
+                                            variant="primary"
+                                            onClick={() => addToCart(product)}
+                                        >
+                                            Agregar al carrito
+                                        </Button>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    ))}
+                </Row>
+            )}
+        </Container>
+    </>
+);
 };
 
 export default SearchResults;

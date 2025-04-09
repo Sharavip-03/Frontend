@@ -11,6 +11,11 @@ import PreaccesoProductos from '../pages/productos/preprod.jsx';
 import AdminProductos from '../pages/productos/2/prod.jsx';
 import Menu from '../components/AdminNavbar/admin';
 import SearchResults from "../pages/buscador/resultados.jsx";
+import AdminMarcas from '../pages/marcas/marcas.jsx';
+import AdminAnimales from '../pages/animales/animales.jsx';
+import AdminDescuentos from '../pages/descuentos/descuentos.jsx';
+import AdminFacturas from '../pages/facturas/facturas.jsx';
+
 
 const NavbarRoutes = () => {
   return (
@@ -23,12 +28,15 @@ const NavbarRoutes = () => {
           <Route path="inventario" element={<PreaccesoProductos />} />
           <Route path="client" element={<AdminClientes />} />
           <Route path="empleado" element={<AdminEmpleados />} />
+          <Route path="facturas" element={<AdminFacturas />} />
           <Route path="rol" element={<AdminRoles />} />
           <Route path="categoria" element={<AdminCategorias />} />
           <Route path="proveedores" element={<AdminProveedores />} />
           <Route path="productos/:id_animal" element={<AdminProductos />} />
           <Route path="Perfil" element={<Perfil />} />
-          <Route path="*" element={<Navigate to="inventario" replace />} />
+          <Route path="marcas" element={<AdminMarcas />} />
+          <Route path="animales" element={<AdminAnimales />} />
+          <Route path="descuentos" element={<AdminDescuentos />} />
         </Routes>
       </div>
     </div>

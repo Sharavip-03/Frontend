@@ -75,7 +75,7 @@ const Menu = () => {
             subItems={[
               { name: "Inventario", path: "/admin/inventario" }, // Cambiado a /admin/inventario
               { name: "Categorías", path: "/admin/categoria" },
-              { name: "Marca", path: "/admin/marca" }
+              { name: "Marca", path: "/admin/marcas" }
             ]} 
           />
           <SidebarItem 

@@ -4,6 +4,8 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Menu from '../../../components/AdminNavbar/admin';
+import { Badge } from 'react-bootstrap';
+
 
 const apiUrl = 'http://localhost:5000';
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
@@ -256,8 +258,9 @@ const AdminProductos = () => {
             <tr>
               <th>ID</th>
               <th>Nombre</th>
-              <th>Descripción</th>
               <th>Precio</th>
+              <th>Descuento</th>
+              <th>Descripción</th>
               <th>Stock</th>
               <th>Estado</th>
               <th>Imagen</th>
@@ -272,8 +275,32 @@ const AdminProductos = () => {
                 <tr key={producto.id_producto}>
                   <td>{producto.id_producto}</td>
                   <td>{producto.nombre}</td>
+                  <td>
+                    {producto.tiene_descuento ? (
+                      <>
+                        <span className="text-danger">
+                          ${producto.precio_descuento.toFixed(2)}
+                        </span>
+                        <small className="text-muted ms-2 text-decoration-line-through">
+                          ${producto.precio.toFixed(2)}
+                        </small>
+                      </>
+                    ) : (
+                      <span>${producto.precio.toFixed(2)}</span>
+                    )}
+                  </td>
+                  <td>
+                    {producto.tiene_descuento ? (
+                      <Badge bg="success">
+                        {Math.round(
+                          ((producto.precio - producto.precio_descuento) / producto.precio) * 100
+                        )}% OFF
+                      </Badge>
+                    ) : (
+                      <Badge bg="secondary">Sin descuento</Badge>
+                    )}
+                  </td>
                   <td>{producto.descripcion || 'Sin descripción'}</td>
-                  <td>${producto.precio}</td>
                   <td>{producto.stock}</td>
                   <td>{producto.estado}</td>
                   <td>

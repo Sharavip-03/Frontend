@@ -1,0 +1,41 @@
+/* Estilos para la tabla */
+.table img {
+    border-radius: 4px;
+  }
+  
+  /* Estilos para la vista previa del producto */
+  .card-preview {
+    height: 100%;
+    border-left: 1px solid #dee2e6;
+  }
+  
+  .card-preview img {
+    max-height: 200px;
+    object-fit: contain;
+  }
+  
+  .price-with-discount {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 15px;
+  }
+  
+  /* Estilos para el modal */
+  .modal-lg {
+    max-width: 800px;
+  }
+  
+  /* Estilos para el placeholder cuando no hay producto seleccionado */
+  .empty-preview {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+  }
+  
+  .empty-preview i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
