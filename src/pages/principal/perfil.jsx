@@ -33,29 +33,17 @@ const Perfil = () => {
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setFade(true);
-      setTimeout(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-        setTimeout(() => setFade(false), 500);
-      }, 500);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const usuarioId = localStorage.getItem("id"); // Obtener ID desde localStorage
+    const usuarioId = localStorage.getItem("id");
     if (!usuarioId) {
       console.error("No hay usuario autenticado");
       return;
     }
-
+  
     const fetchData = async () => {
       try {
         const response = await axios.get(`http://127.0.0.1:5000/Priv/${usuarioId}`, config);
         const clienteData = response.data.cliente;
-
-        // Actualizando el estado de los usuarios
+  
         setUser({
           nombres: clienteData.nombres,
           apellidos: clienteData.apellidos,
@@ -63,16 +51,24 @@ const Perfil = () => {
           telefono: clienteData.telefono,
           direccion: clienteData.direccion,
         });
-
+  
         setUserTest(clienteData);
-
-        console.log("Informacion del usuario test:", clienteData);
-        console.log("Informacion del response:", clienteData);
       } catch (error) {
+        if (error.response && error.response.status === 401) {
+          // El interceptor ya manejará este caso
+          return;
+        }
         console.error("Error al obtener datos:", error);
+        // Mostrar mensaje de error al usuario
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los datos del perfil',
+          confirmButtonText: 'Entendido'
+        });
       }
     };
-
+  
     fetchData();
   }, []);
   const actualizarContraseña = () => {

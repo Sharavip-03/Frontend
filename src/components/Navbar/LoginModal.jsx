@@ -25,8 +25,7 @@ const LoginModal = ({ show, handleClose }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const { email, contrasena } = formData;
-  
+    
     try {
       const response = await fetch("http://127.0.0.1:5000/login", {
         method: "POST",
@@ -39,12 +38,16 @@ const LoginModal = ({ show, handleClose }) => {
       }
   
       const data = await response.json();
-      setUserId(data.usuario);
-  
+      
       if (data.token_de_acceso) {
+        // Decodificar el token para obtener el rol
+        const tokenPayload = JSON.parse(atob(data.token_de_acceso.split('.')[1]));
+        const userRole = tokenPayload.rol;
+  
         localStorage.setItem("token", data.token_de_acceso);
         localStorage.setItem("id", data.usuario);
         localStorage.setItem("isLogged", true);
+        localStorage.setItem("rol", userRole); // Guardar el rol
   
         Swal.fire({
           icon: "success",
@@ -55,13 +58,13 @@ const LoginModal = ({ show, handleClose }) => {
   
         handleClose();
   
-        // Redirección basada en el tipo de usuario
-        if (email === "paola01@gmail.com" && contrasena === "El1234Escondite5656Animal42224235") {
-          navigate("/admin/menu"); // Redirige al inventario para admin
-        } else {
-          setUserId(data.usuario)
-          console.log(userId)
-          navigate("/"); // Ruta para usuarios normales
+        // Redirección basada en el rol
+        if (userRole === 1) { // 1 = Admin
+          navigate("/admin/dashboard");
+        } else if (userRole === 3) { // 3 = Empleado
+          navigate("/admin/menu"); // O la ruta que corresponda para empleados
+        } else { // 2 = Cliente
+          navigate("/");
         }
       } else {
         Swal.fire({
