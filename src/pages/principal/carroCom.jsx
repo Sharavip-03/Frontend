@@ -134,40 +134,159 @@ function Carro({ show, setShow }) {
     }
   };
 
-  const handleProceedToCheckout = async () => {
+  const verificarStock = async () => {
     try {
+        const userId = localStorage.getItem('id');
+        const token = localStorage.getItem('token');
+        
+        // 1. Obtener carrito
+        const carritoResponse = await axios.get(`${apiUrl}/Carrito/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (!carritoResponse.data?.productos) {
+            return { 
+                error: true, 
+                message: "No se pudieron obtener los productos del carrito" 
+            };
+        }
+
+        // 2. Verificar cada producto
+        for (const item of carritoResponse.data.productos) {
+            try {
+                // 2.1 Obtener detalles del producto (CORREGIDO: usa /PrivProd/)
+                const productoResponse = await axios.get(
+                    `${apiUrl}/PrivProd/${item.id_producto}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+
+                // 2.2 Validar estructura de la respuesta (CORREGIDO: verifica .producto.stock)
+                if (typeof productoResponse.data?.producto?.stock !== 'number') {
+                    return {
+                        error: true,
+                        message: `El producto no tiene información válida de stock`,
+                        producto: item.nombre,
+                        id_producto: item.id_producto,
+                        debug: {
+                            received: productoResponse.data,
+                            expected: "Debe contener { producto: { stock: number } }"
+                        }
+                    };
+                }
+
+                const stockDisponible = productoResponse.data.producto.stock;
+                
+                // 2.3 Verificar stock suficiente
+                if (stockDisponible < item.cantidad) {
+                    return {
+                        error: true,
+                        producto: item.nombre,
+                        stock: stockDisponible,
+                        solicitado: item.cantidad,
+                        message: `No hay suficiente stock para ${item.nombre}. Disponible: ${stockDisponible}, Solicitado: ${item.cantidad}`
+                    };
+                }
+
+            } catch (error) {
+                console.error(`Error al verificar producto ${item.id_producto}:`, error);
+                return {
+                    error: true,
+                    message: error.response?.data?.mensaje || `No se pudo verificar el producto ${item.nombre || item.id_producto}`,
+                    producto: item.nombre,
+                    id_producto: item.id_producto,
+                    debug: {
+                        error: error.message,
+                        response: error.response?.data
+                    }
+                };
+            }
+        }
+        
+        // 3. Todo está OK
+        return { error: false };
+        
+    } catch (error) {
+        console.error("Error general al verificar stock:", error);
+        return { 
+            error: true, 
+            message: error.response?.data?.mensaje || "Error de conexión al verificar disponibilidad",
+            debug: error.message
+        };
+    }
+};
+const handleProceedToCheckout = async () => {
+  try {
       const token = localStorage.getItem('token');
       if (!token) {
-        alert("Por favor inicia sesión primero");
-        return;
+          alert("Por favor inicia sesión primero");
+          return;
       }
 
       if (cartItems.length === 0) {
-        alert("Tu carrito está vacío");
-        return;
+          alert("Tu carrito está vacío");
+          return;
       }
 
-      // Crear factura con los productos del carrito
+      const stockCheck = await verificarStock();
+      if (stockCheck.error) {
+          // Construye mensaje completo
+          const errorLines = [
+              stockCheck.message,
+              stockCheck.producto && `Producto: ${stockCheck.producto}`,
+              stockCheck.id_producto && `ID: ${stockCheck.id_producto}`,
+              stockCheck.stock !== undefined && `Stock disponible: ${stockCheck.stock}`,
+              stockCheck.solicitado !== undefined && `Solicitado: ${stockCheck.solicitado}`,
+              process.env.NODE_ENV === 'development' && stockCheck.debug && `Debug: ${stockCheck.debug}`
+          ].filter(Boolean).join('\n');
+          
+          alert(errorLines);
+          return;
+      }
+
       const userId = localStorage.getItem('id');
       const response = await axios.post(
-        `${apiUrl}/Carrito/procesar/${userId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
+          `${apiUrl}/Carrito/procesar/${userId}`,
+          {},
+          {
+              headers: {
+                  Authorization: `Bearer ${token}`
+              }
           }
-        }
       );
 
-      // Redirigir al formulario de pago
       navigate(`/pago/${response.data.id_factura}`);
       handleClose();
-    } catch (error) {
+  } catch (error) {
       console.error("Error al procesar compra:", error);
-      alert("Error al procesar tu compra. Por favor intenta nuevamente.");
-    }
-  };
-
+      
+      // Manejo mejorado de errores
+      let errorMessage = "Error al procesar tu compra. Por favor intenta nuevamente.";
+      
+      if (error.response?.data) {
+          const backendError = error.response.data;
+          errorMessage = [
+              backendError.mensaje || errorMessage,
+              backendError.producto && `Producto: ${backendError.producto}`,
+              backendError.stock_disponible !== undefined && `Stock disponible: ${backendError.stock_disponible}`,
+              backendError.solicitado !== undefined && `Cantidad solicitada: ${backendError.solicitado}`
+          ].filter(Boolean).join('\n');
+      }
+      
+      alert(errorMessage);
+      
+      // Recargar el carrito
+      try {
+          const userId = localStorage.getItem('id');
+          const token = localStorage.getItem('token');
+          const res = await axios.get(`${apiUrl}/Carrito/${userId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+          });
+          setCartItems(res.data?.productos || []);
+      } catch (fetchError) {
+          console.error("Error al recargar el carrito:", fetchError);
+      }
+  }
+};
   // Calcular totales
   const subtotal = cartItems.reduce(
     (sum, item) => sum + (item.cantidad * (item.precio_descuento || item.precio)), 
