@@ -104,7 +104,7 @@ const Menu = () => {
             icon={<FaFileInvoice />} 
             text="Reportes" 
             subItems={[
-              { name: "Ver reportes", path: "/admin/" }
+              { name: "Ver reportes", path: "/admin/reportes" }
             ]} 
           />
         </nav>

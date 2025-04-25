@@ -212,7 +212,7 @@ const AdminDescuentos = () => {
       <Menu />
       <div className="content-container">
         <h1>Descuentos Registrados</h1>
-        <Button variant="primary" className="mb-3" onClick={handleAddDescuento}>
+        <Button className="mb-3" onClick={handleAddDescuento}>
           Agregar Descuento
         </Button>
         <Table striped bordered hover responsive>

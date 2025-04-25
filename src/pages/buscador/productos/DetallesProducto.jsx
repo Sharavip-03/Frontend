@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Container, Row, Col, Card, Button, Image, Spinner, Alert, Form, Badge, InputGroup } from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Image, Spinner, Alert, Badge } from "react-bootstrap";
 import axios from "axios";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -24,14 +24,36 @@ const DetallesProducto = () => {
             try {
                 setLoading(true);
                 
-                const productResponse = await axios.get(`${urlAPI}/PrivProd/${id}`);
-                const productData = productResponse.data.producto;
+                // Obtener producto y descuentos
+                const [productResponse, discountsResponse] = await Promise.all([
+                    axios.get(`${urlAPI}/PrivProd/${id}`),
+                    axios.get(`${urlAPI}/descuentosProd`)
+                ]);
                 
-                if (productData.descuento_activo) {
-                    productData.precio_descuento = productData.precio * (1 - productData.descuento_activo.porcentaje_descuento / 100);
+                const productData = productResponse.data.producto;
+                const allDiscounts = discountsResponse.data.descuentos || [];
+                
+                // Buscar si hay un descuento activo para este producto
+                const today = new Date();
+                const activeDiscount = allDiscounts.find(d => 
+                    d.id_producto === productData.id_producto &&
+                    (!d.fecha_inicio || new Date(d.fecha_inicio) <= today) &&
+                    (!d.fecha_fin || new Date(d.fecha_fin) >= today)
+                );
+                
+                // Agregar el descuento activo al producto si existe
+                if (activeDiscount) {
+                    productData.descuento_activo = {
+                        porcentaje_descuento: activeDiscount.porcentaje_descuento,
+                        fecha_inicio: activeDiscount.fecha_inicio,
+                        fecha_fin: activeDiscount.fecha_fin
+                    };
+                    productData.precio_descuento = productData.precio * (1 - activeDiscount.porcentaje_descuento / 100);
                 }
                 
+                productData.estado = productData.stock > 0 ? 'Disponible' : 'Agotado';
                 setProducto(productData);
+                
                 const allProductsResponse = await axios.get(`${urlAPI}/PrivProd`);
                 setAllProducts(allProductsResponse.data?.productos || []);
                 setError(null);
@@ -42,7 +64,7 @@ const DetallesProducto = () => {
                 setLoading(false);
             }
         };
-
+    
         fetchData();
     }, [id]);
 
@@ -110,8 +132,8 @@ const DetallesProducto = () => {
     };
 
     if (loading) return (
-        <div className="text-center my-5">
-            <Spinner animation="border" role="status">
+        <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+            <Spinner animation="border" role="status" style={{ color: '#FF8357' }}>
                 <span className="visually-hidden">Cargando...</span>
             </Spinner>
         </div>
@@ -119,8 +141,12 @@ const DetallesProducto = () => {
 
     if (error) return (
         <div className="text-center my-5">
-            <Alert variant="danger">{error}</Alert>
-            <Button variant="danger" onClick={() => navigate(-1)}>
+            <Alert variant="danger" className="mx-3">{error}</Alert>
+            <Button 
+                variant="danger" 
+                onClick={() => navigate(-1)}
+                className="mt-3"
+            >
                 Volver
             </Button>
         </div>
@@ -128,20 +154,23 @@ const DetallesProducto = () => {
 
     if (!producto) return (
         <div className="text-center my-5">
-            <Alert variant="warning">Producto no encontrado</Alert>
-            <Button variant="danger" onClick={() => navigate(-1)}>
+            <Alert variant="warning" className="mx-3">Producto no encontrado</Alert>
+            <Button 
+                variant="danger" 
+                onClick={() => navigate(-1)}
+                className="mt-3"
+            >
                 Volver
             </Button>
         </div>
     );
 
     return (
-        <Container className="my-5 detalles-producto-container">
+        <Container className="detalles-producto-container py-4">
             {/* Botón para volver */}
             <Button 
-                variant="outline-danger" 
+                className="back-button"
                 onClick={() => navigate(-1)}
-                className="mb-4"
             >
                 <ArrowBackIcon className="me-2" />
                 Volver
@@ -158,18 +187,17 @@ const DetallesProducto = () => {
                             src={producto.imagen || "https://via.placeholder.com/500"}
                             alt={producto.nombre}
                             fluid
-                            rounded
                             className="main-product-image"
                             onError={(e) => {
                                 e.target.src = "https://via.placeholder.com/500";
                             }}
                         />
-                        {producto.descuento_activo && (
-                            <Badge pill bg="warning" className="discount-badge">
-                                -{producto.descuento_activo.porcentaje_descuento}%
-                            </Badge>
-                        )}
-                        <div className="zoom-hint">
+                                {producto.descuento_activo && (
+                                    <Badge pill className="discount-badge">
+                                        -{producto.descuento_activo.porcentaje_descuento}%
+                                    </Badge>
+                                )}
+                                <div className="zoom-hint">
                             <span>Click para zoom</span>
                         </div>
                     </div>
@@ -190,85 +218,83 @@ const DetallesProducto = () => {
                 </Col>
                 
                 <Col md={6}>
-                    <Card className="h-100 product-details-card">
+                    <Card className="product-details-card">
                         <Card.Body>
-                            <Card.Title as="h2" className="mb-3">{producto.nombre}</Card.Title>
+                            <Card.Title className="product-title">{producto.nombre}</Card.Title>
                             
-                            <div className="mb-3">
+                            <Card.Subtitle className="product-subtitle mb-3">
+                                <span>{producto.marca}</span>
+                                <span>{producto.categoria}</span>
+                                <span>{producto.animal}</span>
+                            </Card.Subtitle>
+                            
+                            {/* Estado de stock */}
+                            <div className={`stock-status ${producto.estado === 'Disponible' ? 'available' : 'out-of-stock'}`}>
+                                {producto.estado} {producto.estado === 'Disponible' ? `(${producto.stock} en stock)` : ''}
+                            </div>
+                            
+                            {/* Precios */}
+                            <div className="price-container">
                                 {producto.precio_descuento ? (
                                     <>
-                                        <span className="h4 text-danger me-2">
+                                        <span className="current-price">
                                             ${producto.precio_descuento.toLocaleString()}
                                         </span>
-                                        <span className="text-decoration-line-through text-muted">
+                                        <span className="original-price">
                                             ${producto.precio.toLocaleString()}
                                         </span>
-                                        <div className="text-success mt-1">
-                                            Ahorras: ${(producto.precio - producto.precio_descuento).toLocaleString()} ({(producto.descuento_activo.porcentaje_descuento)}%)
+                                        <div className="savings-text">
+                                            Ahorras: ${(producto.precio - producto.precio_descuento).toLocaleString()} ({producto.descuento_activo.porcentaje_descuento}%)
                                         </div>
                                     </>
                                 ) : (
-                                    <span className="h4 text-dark">
+                                    <span className="current-price">
                                         ${producto.precio.toLocaleString()}
                                     </span>
                                 )}
                             </div>
                             
-                            <Card.Subtitle className="mb-3 text-muted">
-                                {producto.marca} - {producto.categoria} - {producto.animal}
-                            </Card.Subtitle>
-                            
-                            <Card.Text className="mb-4">
+                            <Card.Text className="product-description">
                                 {producto.descripcion}
                             </Card.Text>
                             
-                            <div className="mb-4">
-                                <h5>Especificaciones:</h5>
-                                <ul>
-                                    <li>Estado: <Badge bg={producto.estado === 'Disponible' ? 'success' : 'danger'}>
-                                        {producto.estado}
-                                    </Badge></li>
-                                    <li>Stock disponible: {producto.stock}</li>
-                                </ul>
-                            </div>
-                            
-                            <div className="d-flex align-items-center mb-4">
-                                <Form.Label className="me-3">Cantidad:</Form.Label>
-                                <div className="d-flex align-items-center">
+                            {/* Controles de cantidad */}
+                            <div className="quantity-controls">
+                                <span className="quantity-label">Cantidad:</span>
+                                <div className="quantity-selector">
                                     <Button 
-                                        variant="outline-secondary" 
+                                        variant="outline"
+                                        className="quantity-btn"
                                         onClick={decrementQuantity}
                                         disabled={cantidad <= 1}
-                                        className="quantity-btn"
                                     >
                                         -
                                     </Button>
-                                    <Badge bg="light" text="dark" className="mx-2 quantity-badge">
+                                    <Badge className="quantity-badge">
                                         {cantidad}
                                     </Badge>
                                     <Button 
-                                        variant="outline-secondary" 
+                                        variant="outline"
+                                        className="quantity-btn"
                                         onClick={incrementQuantity}
                                         disabled={cantidad >= producto.stock}
-                                        className="quantity-btn"
                                     >
                                         +
                                     </Button>
                                 </div>
-                                <div className="ms-3">
-                                    <strong>Total:</strong> ${(producto.precio_descuento ? producto.precio_descuento * cantidad : producto.precio * cantidad).toLocaleString()}
+                                <div className="total-price">
+                                    Total: ${(producto.precio_descuento ? producto.precio_descuento * cantidad : producto.precio * cantidad).toLocaleString()}
                                 </div>
                             </div>
                             
+                            {/* Botón de añadir al carrito */}
                             <Button 
-                                variant="warning" 
-                                size="lg" 
-                                className="me-3 text-white"
+                                className="add-to-cart-btn"
                                 onClick={addToCart}
                                 disabled={producto.estado !== 'Disponible' || producto.stock <= 0}
                             >
                                 <ShoppingCartIcon className="me-2" />
-                                {producto.stock <= 0 ? 'Sin stock' : 'Agregar al carrito'}
+                                {producto.stock <= 0 ? 'AGOTADO' : 'AÑADIR AL CARRITO'}
                             </Button>
                         </Card.Body>
                     </Card>
@@ -278,39 +304,35 @@ const DetallesProducto = () => {
             {/* Productos relacionados */}
             {relatedProducts.length > 0 && (
                 <div className="related-products-section">
-                    <h3 className="mb-4">Productos relacionados</h3>
+                    <h3 className="related-products-title">Productos relacionados</h3>
                     <Row xs={1} md={2} lg={3} className="g-4">
                         {relatedProducts.map(product => (
                             <Col key={product.id_producto}>
-                                <Card className="h-100">
+                                <Card className="related-product-card">
                                     <Card.Img 
                                         variant="top" 
                                         src={product.imagen} 
-                                        style={{ height: "200px", objectFit: "cover" }}
-                                        className="p-2"
+                                        className="related-product-image"
                                         onError={(e) => {
                                             e.target.src = "https://via.placeholder.com/300";
                                         }}
                                     />
-                                    <Card.Body className="d-flex flex-column">
-                                        <Card.Title>{product.nombre}</Card.Title>
-                                        <Card.Subtitle className="mb-2 text-muted">
-                                            {product.marca} - {product.categoria}
+                                    <Card.Body className="related-product-body">
+                                        <Card.Title className="related-product-title">
+                                            {product.nombre}
+                                        </Card.Title>
+                                        <Card.Subtitle className="related-product-subtitle">
+                                            {product.marca} • {product.categoria}
                                         </Card.Subtitle>
-                                        <div className="mt-auto">
-                                            <div className="d-flex justify-content-between align-items-center">
-                                                <span className="h5 text-dark">
-                                                    ${product.precio.toLocaleString()}
-                                                </span>
-                                                <Button 
-                                                    variant="outline-danger"
-                                                    size="sm"
-                                                    onClick={() => navigate(`/producto/${product.id_producto}`)}
-                                                >
-                                                    Ver detalles
-                                                </Button>
-                                            </div>
+                                        <div className="related-product-price">
+                                            ${product.precio.toLocaleString()}
                                         </div>
+                                        <Button 
+                                            className="view-details-btn"
+                                            onClick={() => navigate(`/producto/${product.id_producto}`)}
+                                        >
+                                            Ver detalles
+                                        </Button>
                                     </Card.Body>
                                 </Card>
                             </Col>

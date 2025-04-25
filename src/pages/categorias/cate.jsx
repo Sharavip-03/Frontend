@@ -74,7 +74,7 @@ const AdminCategorias = () => {
       <Menu />
       <div className="content-container">
         <h1>Categorías Registradas</h1>
-        <Button variant="primary" className="mb-3" onClick={handleAddCategoria}>
+        <Button className="mb-3" onClick={handleAddCategoria}>
           Agregar Categoría
         </Button>
         <Table striped bordered hover responsive>
@@ -153,7 +153,7 @@ const AdminCategorias = () => {
               <Button variant="secondary" onClick={() => setShowModal(false)}>
                 Cancelar
               </Button>
-              <Button variant="primary" type="submit">
+              <Button type="submit">
                 {isNewCategoria ? 'Crear Categoría' : 'Guardar Cambios'}
               </Button>
             </Form>

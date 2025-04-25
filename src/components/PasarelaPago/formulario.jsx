@@ -3,6 +3,8 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Form, Button, Container, Row, Col, Card, Alert, Modal } from 'react-bootstrap';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import { FaLock, FaCreditCard, FaMoneyBillWave, FaExchangeAlt } from 'react-icons/fa';
+import './FormularioPago.css';
 
 const apiUrl = 'http://localhost:5000';
 
@@ -27,7 +29,6 @@ const FormularioPago = () => {
         codigo_seguridad: '',
     });
 
-    
     useEffect(() => {
         const cargarFactura = async () => {
             try {
@@ -47,14 +48,11 @@ const FormularioPago = () => {
                     return;
                 }
         
-                console.log("Intentando cargar factura con ID:", id_factura);
                 const facturaResponse = await axios.get(`${apiUrl}/PrivFactura/${id_factura}`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
                 });
-                
-                console.log("Respuesta del servidor:", facturaResponse.data);
                 
                 if (!facturaResponse.data?.factura) {
                     setError(facturaResponse.data?.mensaje || "La factura no existe o ya fue pagada");
@@ -67,12 +65,9 @@ const FormularioPago = () => {
                 setLoading(false);
                 
             } catch (error) {
-                console.error("Error al cargar factura:", error);
-                
                 let errorMessage = "Error al cargar la factura";
                 
                 if (error.response) {
-                    // Si el backend devuelve un mensaje de error, usarlo
                     errorMessage = error.response.data?.mensaje || error.response.data?.error || errorMessage;
                     
                     if (error.response.status === 401) {
@@ -93,7 +88,6 @@ const FormularioPago = () => {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         
-        // Formatear número de tarjeta para mostrar espacios cada 4 dígitos
         if (name === 'numero_tarjeta') {
             const cleanedValue = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
             let formattedValue = '';
@@ -110,7 +104,6 @@ const FormularioPago = () => {
             return;
         }
         
-        // Formatear fecha de expiración (MM/YY)
         if (name === 'fecha_expiracion') {
             const cleanedValue = value.replace(/[^0-9]/g, '');
             let formattedValue = cleanedValue;
@@ -136,7 +129,6 @@ const FormularioPago = () => {
         e.preventDefault();
         
         try {
-            // Validar que tipo_pago no sea null o vacío
             if (!formData.tipo_pago) {
                 Swal.fire({
                     icon: 'error',
@@ -146,17 +138,15 @@ const FormularioPago = () => {
                 return;
             }
     
-            // Preparar datos para enviar - estructura explícita
             const datosPago = {
                 id_factura: formData.id_factura,
-                tipo_pago: formData.tipo_pago, // Asegurar que este campo tenga valor
+                tipo_pago: formData.tipo_pago,
                 titular: formData.tipo_pago === 'tarjeta' ? formData.titular : null,
                 numero_tarjeta: formData.tipo_pago === 'tarjeta' ? formData.numero_tarjeta.replace(/\s+/g, '') : null,
                 fecha_expiracion: formData.tipo_pago === 'tarjeta' ? formData.fecha_expiracion : null,
                 codigo_seguridad: formData.tipo_pago === 'tarjeta' ? formData.codigo_seguridad : null
             };
     
-            // Mostrar loading
             Swal.fire({
                 title: 'Procesando pago',
                 html: 'Por favor espera...',
@@ -164,14 +154,12 @@ const FormularioPago = () => {
                 didOpen: () => Swal.showLoading()
             });
     
-            // Enviar datos al backend
             const response = await axios.post(`${apiUrl}/api/pagos/procesar`, datosPago, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
     
-            // Procesar respuesta exitosa
             Swal.fire({
                 icon: 'success',
                 title: 'Pago exitoso',
@@ -180,7 +168,7 @@ const FormularioPago = () => {
     
         } catch (err) {
             console.error("Error en el proceso de pago:", err);
-            Swal.close(); // Cerrar loading si hay error
+            Swal.close();
             
             let errorMessage = "Error al procesar el pago";
             
@@ -218,32 +206,69 @@ const FormularioPago = () => {
         }
     };
 
-    if (loading) return <div>Cargando...</div>;
-    if (error) return <Alert variant="danger">{error}</Alert>;
-    if (!factura) return <Alert variant="warning">No se encontró la factura</Alert>;
+    if (loading) return (
+        <div className="payment-container d-flex justify-content-center align-items-center">
+            <div className="spinner-border text-warning" role="status">
+                <span className="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    );
+    
+    if (error) return (
+        <div className="payment-container d-flex justify-content-center align-items-center">
+            <Alert variant="danger" className="w-75 text-center">{error}</Alert>
+        </div>
+    );
+    
+    if (!factura) return (
+        <div className="payment-container d-flex justify-content-center align-items-center">
+            <Alert variant="warning" className="w-75 text-center">No se encontró la factura</Alert>
+        </div>
+    );
 
     return (
-        <div className="admin-container">
-            <Container className="mt-4">
+        <div className="payment-container">
+            <Container className="py-5">
                 <Row className="justify-content-center">
-                    <Col md={8}>
-                        <Card>
-                            <Card.Header as="h5">Formulario de Pago</Card.Header>
-                            <Card.Body>
-                                <Card.Title>Factura #{factura.id_factura}</Card.Title>
-                                <Card.Text>
-                                    <strong>Total a pagar:</strong> ${factura.total.toFixed(2)}<br />
-                                    <strong>IVA:</strong> ${factura.iva_total.toFixed(2)}<br />
-                                    <strong>Total con IVA:</strong> ${(factura.total + factura.iva_total).toFixed(2)}
-                                </Card.Text>
+                    <Col lg={8}>
+                        <Card className="payment-card">
+                            <Card.Header className="payment-header">
+                                <Card.Title className="payment-title">
+                                    {formData.tipo_pago === 'tarjeta' ? <FaCreditCard className="me-2" /> : 
+                                     formData.tipo_pago === 'efectivo' ? <FaMoneyBillWave className="me-2" /> : 
+                                     <FaExchangeAlt className="me-2" />}
+                                    Formulario de Pago
+                                </Card.Title>
+                            </Card.Header>
+                            <Card.Body className="payment-body">
+                                <div className="invoice-details">
+                                    <h5 className="invoice-details-title">Detalles de la Factura</h5>
+                                    <div className="invoice-detail">
+                                        <span className="invoice-detail-label">Número de Factura:</span>
+                                        <span className="invoice-detail-value">#{factura.id_factura}</span>
+                                    </div>
+                                    <div className="invoice-detail">
+                                        <span className="invoice-detail-label">Subtotal:</span>
+                                        <span className="invoice-detail-value">${factura.total.toFixed(2)}</span>
+                                    </div>
+                                    <div className="invoice-detail">
+                                        <span className="invoice-detail-label">IVA:</span>
+                                        <span className="invoice-detail-value">${factura.iva_total.toFixed(2)}</span>
+                                    </div>
+                                    <div className="invoice-detail invoice-total">
+                                        <span className="invoice-detail-label">Total a Pagar:</span>
+                                        <span className="invoice-detail-value">${(factura.total + factura.iva_total).toFixed(2)}</span>
+                                    </div>
+                                </div>
                                 
-                                <Form onSubmit={handleSubmit}>
-                                    <Form.Group className="mb-3">
+                                <Form onSubmit={handleSubmit} className="payment-form">
+                                    <Form.Group className="mb-4">
                                         <Form.Label>Método de pago</Form.Label>
                                         <Form.Select 
                                             name="tipo_pago"
                                             value={formData.tipo_pago}
                                             onChange={handleInputChange}
+                                            className="payment-method-select"
                                         >
                                             <option value="tarjeta">Tarjeta de crédito/débito</option>
                                             <option value="efectivo">Pago en efectivo</option>
@@ -261,6 +286,7 @@ const FormularioPago = () => {
                                                     value={formData.titular}
                                                     onChange={handleInputChange}
                                                     placeholder="Nombre como aparece en la tarjeta"
+                                                    required
                                                 />
                                             </Form.Group>
                                             
@@ -273,7 +299,9 @@ const FormularioPago = () => {
                                                     onChange={handleInputChange}
                                                     placeholder="1234 5678 9012 3456"
                                                     maxLength="19"
+                                                    required
                                                 />
+
                                             </Form.Group>
                                             
                                             <Row className="mb-3">
@@ -287,6 +315,7 @@ const FormularioPago = () => {
                                                             onChange={handleInputChange}
                                                             placeholder="MM/AA"
                                                             maxLength="5"
+                                                            required
                                                         />
                                                     </Form.Group>
                                                 </Col>
@@ -300,43 +329,57 @@ const FormularioPago = () => {
                                                             onChange={handleInputChange}
                                                             placeholder="CVC/CVV"
                                                             maxLength="4"
+                                                            required
                                                         />
+                                                        <div className="security-info">
+                                                            <FaLock />
+                                                            <span>Los 3 dígitos en el reverso de tu tarjeta</span>
+                                                        </div>
                                                     </Form.Group>
                                                 </Col>
                                             </Row>
                                             
-                                            <Form.Group className="mb-3">
+                                            <Form.Group className="mb-4">
                                                 <Form.Check
                                                     type="checkbox"
                                                     label="Guardar información de tarjeta para futuras compras"
                                                     checked={guardarDatos}
                                                     onChange={(e) => setGuardarDatos(e.target.checked)}
+                                                    id="save-card-info"
                                                 />
                                             </Form.Group>
                                         </>
                                     )}
                                     
                                     {formData.tipo_pago === 'efectivo' && (
-                                        <Alert variant="info">
-                                            Al seleccionar pago en efectivo, deberás acercarte a una de nuestras sucursales para completar el pago.
+                                        <Alert variant="info" className="d-flex align-items-center">
+                                            <FaMoneyBillWave className="me-2" size={24} />
+                                            <div>
+                                                <strong>Pago en efectivo</strong><br />
+                                                Al seleccionar esta opción, deberás acercarte a una de nuestras sucursales para completar el pago.
+                                            </div>
                                         </Alert>
                                     )}
                                     
                                     {formData.tipo_pago === 'transferencia' && (
-                                        <Alert variant="info">
-                                            Por favor realiza la transferencia a la siguiente cuenta:<br />
-                                            Banco: TuBanco<br />
-                                            Cuenta: 123456789<br />
-                                            CLAVE: 012345678912345678<br />
-                                            A nombre de: El Escondite Animal<br />
-                                            <strong>Importante:</strong> Incluye el número de factura como referencia.
+                                        <Alert variant="info" className="d-flex align-items-center">
+                                            <FaExchangeAlt className="me-2" size={24} />
+                                            <div>
+                                                <strong>Transferencia bancaria</strong><br />
+                                                Por favor realiza la transferencia a la siguiente cuenta:<br />
+                                                Banco: TuBanco<br />
+                                                Cuenta: 123456789<br />
+                                                CLAVE: 012345678912345678<br />
+                                                A nombre de: El Escondite Animal<br />
+                                                <strong>Importante:</strong> Incluye el número de factura como referencia.
+                                            </div>
                                         </Alert>
                                     )}
                                     
                                     {error && <Alert variant="danger">{error}</Alert>}
                                     
-                                    <div className="d-grid gap-2">
-                                        <Button variant="primary" type="submit" size="lg">
+                                    <div className="d-grid gap-2 mt-4">
+                                        <Button variant="primary" type="submit" className="payment-btn">
                                             {formData.tipo_pago === 'tarjeta' ? 'Pagar ahora' : 'Confirmar método de pago'}
                                         </Button>
                                     </div>
@@ -346,11 +389,10 @@ const FormularioPago = () => {
                     </Col>
                 </Row>
                 
-                {/* Modal de confirmación */}
                 <Modal show={showModal} onHide={() => {
                     setShowModal(false);
-                    navigate('/'); // Redirigir al inicio después de cerrar
-                }}>
+                    navigate('/');
+                }} className="confirmation-modal">
                     <Modal.Header closeButton>
                         <Modal.Title>Pago procesado</Modal.Title>
                     </Modal.Header>

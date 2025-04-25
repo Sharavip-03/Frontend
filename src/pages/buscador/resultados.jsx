@@ -188,13 +188,13 @@ const SearchResults = () => {
     return (
         <div className="search-page-container">
             {/* Navbar personalizado */}
-            <Navbar bg="primary" variant="dark" expand="lg" className="search-navbar sticky-top">
+            <Navbar expand="lg" className="search-navbar sticky-top">
                 <Container fluid>
                     {/* Botón para volver atrás */}
                     <Button 
                         variant="link" 
                         className="text-white navbar-icon"
-                        onClick={() => navigate(-1)}
+                        onClick={() => navigate('/')}
                     >
                         <ArrowBackIcon fontSize="large" />
                     </Button>
@@ -328,7 +328,6 @@ const SearchResults = () => {
                             <h4>No se encontraron productos</h4>
                             <p>Intenta con otros términos de búsqueda o ajusta los filtros</p>
                             <Button 
-                                variant="primary" 
                                 className="mt-3"
                                 onClick={clearFilters}
                             >
@@ -369,7 +368,7 @@ const SearchResults = () => {
                                                         </span>
                                                         </>
                                                     ) : (
-                                                        <span className="h5 text-primary">
+                                                        <span className="h5">
                                                         ${product.precio.toLocaleString()}
                                                         </span>
                                                     )}
@@ -377,14 +376,12 @@ const SearchResults = () => {
                                                 </div>
                                                 <div className="d-flex justify-content-between mt-3 product-actions">
                                                     <Button 
-                                                        variant="outline-primary"
                                                         onClick={() => navigate(`/producto/${product.id_producto}`)}
                                                         className="details-button"
                                                     >
                                                         Ver detalles
                                                     </Button>
                                                     <Button 
-                                                        variant="primary"
                                                         onClick={() => addToCart(product)}
                                                         className="cart-button"
                                                     >
