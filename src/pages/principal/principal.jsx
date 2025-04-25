@@ -30,23 +30,47 @@ const Principal = () => {
   const navigate = useNavigate();
 
   // Función para manejar la redirección
-  const handleCategoryClick = (category) => {
-    navigate(`/categorias/categorias.php?category=${encodeURIComponent(category)}`);
+  const handleCategoryClick = (categoryType, animal) => {
+    // Normalizar nombres para la API
+    const categoriasMap = {
+      'Camas': 'camas',
+      'Accesorios': 'accesorios',
+      'Comidas': 'comida',
+      'Juguetes': 'juguetes'
+    };
+    
+    const animalesMap = {
+      'gatos': 'gato',
+      'perros': 'perro',
+      'otros': 'otros'
+    };
+    
+    const categoriaNormalizada = categoriasMap[categoryType] || categoryType.toLowerCase();
+    const animalNormalizado = animalesMap[animal] || animal.toLowerCase();
+    
+    navigate(`/search?category=${encodeURIComponent(`${categoriaNormalizada} para ${animalNormalizado}`)}`);
   };
-
   // Estado para controlar cada dropdown
   const [isOpen1, setIsOpen1] = useState(false);
   const [isOpen2, setIsOpen2] = useState(false);
   const [isOpen3, setIsOpen3] = useState(false);
 
-  // Funciones para manejar la apertura y cierre con el cursor
-  const handleMouseEnter1 = () => setIsOpen1(true);
-  const handleMouseEnter2 = () => setIsOpen2(true);
-  const handleMouseEnter3 = () => setIsOpen3(true);
 
-  const handleMouseLeave1 = () => setIsOpen1(false);
-  const handleMouseLeave2 = () => setIsOpen2(false);
-  const handleMouseLeave3 = () => setIsOpen3(false);
+  // Reemplaza los estados individuales con un objeto
+  const [dropdownStates, setDropdownStates] = useState({
+    gatos: false,
+    perros: false,
+    otros: false
+  });
+
+  // Función genérica para manejar hover
+  const handleMouseEnter = (dropdown) => {
+    setDropdownStates(prev => ({ ...prev, [dropdown]: true }));
+  };
+
+  const handleMouseLeave = (dropdown) => {
+    setDropdownStates(prev => ({ ...prev, [dropdown]: false }));
+  };
 
 
   const handleAnimationComplete = () => {
@@ -57,78 +81,86 @@ const Principal = () => {
     <>
     <NavBar />
       {/* Menu Desplegable */}
-      <nav className="navbar navbar-custom11">
-        <div className="container-fluid">
-          <ul className="navbar-nav flex-row w-100">
-            {/* Dropdown Gatos */}
-            <li
-              className="dropdown mx-3"
-              onMouseEnter={handleMouseEnter1}
-              onMouseLeave={handleMouseLeave1}
-            >
-              <DropdownButton
-                id="dropdown-basic-button1"
-                title={
-                  <>
-                    <img src={gato} alt="Cat" />
-                    Gatos
-                  </>
-                }
-                show={isOpen1}
-              >
-                <Dropdown.Item href="#/action-1">Camas</Dropdown.Item>
-                <Dropdown.Item href="#/action-2">Accesorios</Dropdown.Item>
-                <Dropdown.Item href="#/action-3">Comidas</Dropdown.Item>
-                <Dropdown.Item href="#/action-3">Juguetes</Dropdown.Item>
-              </DropdownButton>
-            </li>
-            {/* Dropdown Otros animales */}
-            <li
-              className="dropdown mx-3"
-              onMouseEnter={handleMouseEnter2}
-              onMouseLeave={handleMouseLeave2}
-            >
-              <DropdownButton
-                id="dropdown-basic-button2"
-                title={
-                  <>
-                    <img src={animales} alt="Other animals" />
-                    Otros animales
-                  </>
-                }
-                show={isOpen2}
-              >
-                <Dropdown.Item href="#/action-1">Camas</Dropdown.Item>
-                <Dropdown.Item href="#/action-2">Accesorios</Dropdown.Item>
-                <Dropdown.Item href="#/action-3">Comidas</Dropdown.Item>
-                <Dropdown.Item href="#/action-3">Juguetes</Dropdown.Item>
-              </DropdownButton>
-            </li>
-            {/* Dropdown Perros */}
-            <li
-              className="dropdown mx-3"
-              onMouseEnter={handleMouseEnter3}
-              onMouseLeave={handleMouseLeave3}
-            >
-              <DropdownButton
-                id="dropdown-basic-button3"
-                title={
-                  <>
-                    <img src={dog} alt="Dog" />
-                    Perros
-                  </>
-                }
-                show={isOpen3}
-              >
-                <Dropdown.Item href="#/action-1">Camas</Dropdown.Item>
-                <Dropdown.Item href="#/action-2">Accesorios</Dropdown.Item>
-                <Dropdown.Item href="#/action-3">Comidas</Dropdown.Item>
-                <Dropdown.Item href="#/action-3">Juguetes</Dropdown.Item>
-              </DropdownButton>
-            </li>
-          </ul>
-        </div>
-      </nav>
+        <nav className="navbar navbar-custom11">
+    <div className="container-fluid">
+      <ul className="navbar-nav flex-row w-100">
+        {/* Dropdown Gatos */}
+        <li
+          className="dropdown mx-3"
+          onMouseEnter={() => handleMouseEnter('gatos')}
+          onMouseLeave={() => handleMouseLeave('gatos')}
+        >
+          <DropdownButton
+            id="dropdown-basic-button1"
+            title={
+              <>
+                <img src={gato} alt="Cat" style={{ width: '24px', marginRight: '8px' }} />
+                Gatos
+              </>
+            }
+            show={dropdownStates.gatos}
+            onMouseEnter={() => handleMouseEnter('gatos')}
+          >
+            <Dropdown.Item onClick={() => handleCategoryClick('Camas', 'gatos')}>Camas</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleCategoryClick('Accesorios', 'gatos')}>Accesorios</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleCategoryClick('Comida', 'gatos')}>Comidas</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleCategoryClick('Juguetes', 'gatos')}>Juguetes</Dropdown.Item>
+          </DropdownButton>
+        </li>
+
+        {/* Dropdown Otros animales */}
+        <li
+          className="dropdown mx-3"
+          onMouseEnter={() => handleMouseEnter('otros')}
+          onMouseLeave={() => handleMouseLeave('otros')}
+        >
+          <DropdownButton
+            id="dropdown-basic-button2"
+            title={
+              <>
+                <img src={animales} alt="Other animals" style={{ width: '24px', marginRight: '8px' }} />
+                Otros animales
+              </>
+            }
+            show={dropdownStates.otros}
+            onMouseEnter={() => handleMouseEnter('otros')}
+          >
+            <Dropdown.Item onClick={() => handleCategoryClick('Camas', 'otros')}>Camas</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleCategoryClick('Accesorios', 'otros')}>Accesorios</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleCategoryClick('Comida', 'otros')}>Comidas</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleCategoryClick('Juguetes', 'otros')}>Juguetes</Dropdown.Item>
+            <Dropdown.Item onClick={() => navigate('/search?otros_animales=true')}>
+              Todos los productos
+            </Dropdown.Item>
+          </DropdownButton>
+        </li>
+
+        {/* Dropdown Perros */}
+        <li
+          className="dropdown mx-3"
+          onMouseEnter={() => handleMouseEnter('perros')}
+          onMouseLeave={() => handleMouseLeave('perros')}
+        >
+          <DropdownButton
+            id="dropdown-basic-button3"
+            title={
+              <>
+                <img src={dog} alt="Dog" style={{ width: '24px', marginRight: '8px' }} />
+                Perros
+              </>
+            }
+            show={dropdownStates.perros}
+            onMouseEnter={() => handleMouseEnter('perros')}
+          >
+            <Dropdown.Item onClick={() => handleCategoryClick('Camas', 'perros')}>Camas</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleCategoryClick('Accesorios', 'perros')}>Accesorios</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleCategoryClick('Comida', 'perros')}>Comidas</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleCategoryClick('Juguetes', 'perros')}>Juguetes</Dropdown.Item>
+          </DropdownButton>
+        </li>
+      </ul>
+    </div>
+  </nav>
       
       <br />
       <hr />
@@ -212,25 +244,27 @@ const Principal = () => {
       <br />
 
 
-   {/* Marcas */}
-<div className="container my-4">
-<center>
-    <SplitText
-      text="Marcas"
-      className="text-6xl font-semibold text-center"
-      delay={150}
-      animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
-      animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
-      easing="easeOutCubic"
-      threshold={0.2}
-      rootMargin="-50px"
-      onLetterAnimationComplete={handleAnimationComplete}
-    />
-  </center>
-  <div style={{ height: '600px', position: 'relative', marginTop: '-120px' }}>
-    <CircularGallery bend={3} textColor="#ffffff" borderRadius={0.05} />
-  </div>
-</div>
+  {/* Marcas */}
+  <div className="container my-4">
+      <center>
+        <SplitText
+          text="Marcas"
+          className="text-6xl font-semibold text-center"
+          delay={150}
+          animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
+          animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
+          easing="easeOutCubic"
+          threshold={0.2}
+          rootMargin="-50px"
+          onLetterAnimationComplete={handleAnimationComplete}
+        />
+      </center>
+      <br />
+      <Marcas />
+    </div>
+
+
+
 
 
       

@@ -95,41 +95,65 @@ const SearchResults = () => {
     // Obtener datos de la API
     useEffect(() => {
         const fetchData = async () => {
-            try {
-                setLoading(true);
-                
-                // Obtener productos
-                const productsResponse = await axios.get(`${urlAPI}/PrivProd`);
-                const productosData = productsResponse.data?.productos || [];
-                
-                if (!Array.isArray(productosData)) {
-                    throw new Error("Formato de respuesta inválido");
-                }
-                
-                // Obtener datos para filtros
-                const [categoriesRes, brandsRes, animalsRes] = await Promise.all([
-                    axios.get(`${urlAPI}/categoria`),
-                    axios.get(`${urlAPI}/PrivMarcas`),
-                    axios.get(`${urlAPI}/animalesProd`)
-                ]);
-                
-                setCategories(categoriesRes.data?.categorias || []);
-                setBrands(brandsRes.data?.marcas || []);
-                setAnimals(animalsRes.data?.animales || []);
-
-                setProducts(productosData);
-                setError(null);
-            } catch (err) {
-                setError(`Error al cargar datos: ${err.message}`);
-                console.error("Error:", err);
-            } finally {
-                setLoading(false);
+          try {
+            setLoading(true);
+            const category = queryParams.get("category");
+            
+            // 1. Verificar estado de la base de datos
+            const debugRes = await axios.get(`${urlAPI}/debug/categorias`);
+            console.log("Estado de la base de datos:", debugRes.data);
+            
+            let productsData = [];
+            
+            // 2. Obtener productos según el filtro
+            if (category) {
+              const res = await axios.get(
+                `${urlAPI}/productos/categoria/${encodeURIComponent(category)}`
+              );
+              
+              // Verificar estructura de respuesta
+              if (Array.isArray(res.data)) {
+                productsData = res.data;
+              } else {
+                console.error("La API no devolvió un array:", res.data);
+                productsData = [];
+              }
+            } else {
+              const res = await axios.get(`${urlAPI}/PrivProd`);
+              productsData = res.data?.productos || [];
             }
+            
+            // 3. Obtener datos para filtros
+            const [categoriesRes, brandsRes, animalsRes] = await Promise.all([
+              axios.get(`${urlAPI}/categoria`),
+              axios.get(`${urlAPI}/PrivMarcas`),
+              axios.get(`${urlAPI}/animalesProd`)
+            ]);
+            
+            setProducts(productsData);
+            setCategories(categoriesRes.data?.categorias || []);
+            setBrands(brandsRes.data?.marcas || []);
+            setAnimals(animalsRes.data?.animales || []);
+            
+            // 4. Mostrar advertencia si no hay productos
+            if (productsData.length === 0 && category) {
+              setError(`No se encontraron productos para "${category}". Verifica los datos en la consola.`);
+            } else {
+              setError(null);
+            }
+            
+          } catch (err) {
+            console.error("Error completo:", err);
+            setError(err.response?.data?.mensaje || 
+                    "Error al cargar productos. Verifica la consola");
+          } finally {
+            setLoading(false);
+          }
         };
-    
+        
         fetchData();
-    }, [searchQuery]);
-
+      }, [searchQuery, location.search]);
+      
     // Filtrado combinado (búsqueda + filtros)
     const filteredProducts = useMemo(() => {
         let result = searchProducts(products, searchQuery);
