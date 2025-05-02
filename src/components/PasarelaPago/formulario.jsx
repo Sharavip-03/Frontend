@@ -3,7 +3,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Form, Button, Container, Row, Col, Card, Alert, Modal } from 'react-bootstrap';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { FaLock, FaCreditCard, FaMoneyBillWave, FaExchangeAlt } from 'react-icons/fa';
+import { FaLock, FaCreditCard, FaMoneyBillWave, FaExchangeAlt, FaTimes } from 'react-icons/fa';
 import './FormularioPago.css';
 
 const apiUrl = 'http://localhost:5000';
@@ -41,17 +41,8 @@ const FormularioPago = () => {
                     return;
                 }
         
-                if (!token) {
-                    setError("No estás autenticado. Por favor inicia sesión.");
-                    setLoading(false);
-                    navigate('/login');
-                    return;
-                }
-        
                 const facturaResponse = await axios.get(`${apiUrl}/PrivFactura/${id_factura}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
                 
                 if (!facturaResponse.data?.factura) {
@@ -67,14 +58,12 @@ const FormularioPago = () => {
             } catch (error) {
                 let errorMessage = "Error al cargar la factura";
                 
-                if (error.response) {
-                    errorMessage = error.response.data?.mensaje || error.response.data?.error || errorMessage;
-                    
-                    if (error.response.status === 401) {
-                        errorMessage = "Tu sesión ha expirado. Por favor inicia sesión nuevamente.";
-                        localStorage.removeItem('token');
-                        navigate('/login');
-                    }
+                if (error.response?.status === 401) {
+                    errorMessage = "Tu sesión ha expirado. Por favor inicia sesión nuevamente.";
+                    localStorage.removeItem('token');
+                    navigate('/login');
+                } else {
+                    errorMessage = error.response?.data?.mensaje || errorMessage;
                 }
                 
                 setError(errorMessage);
@@ -160,42 +149,27 @@ const FormularioPago = () => {
                 }
             });
     
-            Swal.fire({
-                icon: 'success',
-                title: 'Pago exitoso',
-                text: 'Tu transacción ha sido procesada correctamente'
-            });
-    
+            Swal.close();
+            setPagoInfo(response.data.pago);
+            setShowModal(true);
+            
+            if (response.data.carrito_vaciado) {
+                // Limpiar carrito en el estado global si es necesario
+            }
+            
         } catch (err) {
-            console.error("Error en el proceso de pago:", err);
             Swal.close();
             
             let errorMessage = "Error al procesar el pago";
             
-            if (err.response) {
-                if (err.response.status === 401) {
-                    errorMessage = "Tu sesión ha expirado. Por favor inicia sesión nuevamente.";
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('id');
-                    
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Sesión expirada',
-                        text: errorMessage,
-                        willClose: () => {
-                            navigate('/login');
-                        }
-                    });
-                    return;
-                } else {
-                    errorMessage = err.response.data?.mensaje || 
-                                  err.response.data?.error || 
-                                  `Error del servidor (${err.response.status})`;
-                }
-            } else if (err.code === "ERR_NETWORK") {
-                errorMessage = "Error de conexión. Por favor verifica tu conexión a internet.";
-            } else if (err.message) {
-                errorMessage = err.message;
+            if (err.response?.status === 401) {
+                errorMessage = "Tu sesión ha expirado. Por favor inicia sesión nuevamente.";
+                localStorage.removeItem('token');
+                navigate('/login');
+            } else {
+                errorMessage = err.response?.data?.mensaje || 
+                              err.response?.data?.error || 
+                              `Error del servidor (${err.response?.status})`;
             }
             
             Swal.fire({
@@ -206,8 +180,19 @@ const FormularioPago = () => {
         }
     };
 
+    const cancelarPago = async () => {
+        try {
+            await axios.post(`${apiUrl}/api/pagos/cancelar/${formData.id_factura}`, {}, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            });
+            navigate('/');
+        } catch (err) {
+            setError(err.response?.data?.mensaje || "Error al cancelar el pago");
+        }
+    };
+
     if (loading) return (
-        <div className="payment-container d-flex justify-content-center align-items-center">
+        <div className="payment-loading">
             <div className="spinner-border text-warning" role="status">
                 <span className="visually-hidden">Cargando...</span>
             </div>
@@ -215,14 +200,14 @@ const FormularioPago = () => {
     );
     
     if (error) return (
-        <div className="payment-container d-flex justify-content-center align-items-center">
-            <Alert variant="danger" className="w-75 text-center">{error}</Alert>
+        <div className="payment-container">
+            <Alert variant="danger" className="payment-error">{error}</Alert>
         </div>
     );
     
     if (!factura) return (
-        <div className="payment-container d-flex justify-content-center align-items-center">
-            <Alert variant="warning" className="w-75 text-center">No se encontró la factura</Alert>
+        <div className="payment-container">
+            <Alert variant="warning">No se encontró la factura</Alert>
         </div>
     );
 
@@ -239,12 +224,20 @@ const FormularioPago = () => {
                                      <FaExchangeAlt className="me-2" />}
                                     Formulario de Pago
                                 </Card.Title>
+                                <Button 
+                                    variant="link" 
+                                    className="payment-cancel-btn"
+                                    onClick={cancelarPago}
+                                >
+                                    <FaTimes /> Cancelar
+                                </Button>
                             </Card.Header>
+                            
                             <Card.Body className="payment-body">
                                 <div className="invoice-details">
                                     <h5 className="invoice-details-title">Detalles de la Factura</h5>
                                     <div className="invoice-detail">
-                                        <span className="invoice-detail-label">Número de Factura:</span>
+                                        <span className="invoice-detail-label">Número:</span>
                                         <span className="invoice-detail-value">#{factura.id_factura}</span>
                                     </div>
                                     <div className="invoice-detail">
@@ -256,7 +249,7 @@ const FormularioPago = () => {
                                         <span className="invoice-detail-value">${factura.iva_total.toFixed(2)}</span>
                                     </div>
                                     <div className="invoice-detail invoice-total">
-                                        <span className="invoice-detail-label">Total a Pagar:</span>
+                                        <span className="invoice-detail-label">Total:</span>
                                         <span className="invoice-detail-value">${(factura.total + factura.iva_total).toFixed(2)}</span>
                                     </div>
                                 </div>
@@ -301,7 +294,6 @@ const FormularioPago = () => {
                                                     maxLength="19"
                                                     required
                                                 />
-
                                             </Form.Group>
                                             
                                             <Row className="mb-3">
@@ -352,7 +344,7 @@ const FormularioPago = () => {
                                     )}
                                     
                                     {formData.tipo_pago === 'efectivo' && (
-                                        <Alert variant="info" className="d-flex align-items-center">
+                                        <Alert variant="info" className="payment-alert">
                                             <FaMoneyBillWave className="me-2" size={24} />
                                             <div>
                                                 <strong>Pago en efectivo</strong><br />
@@ -362,7 +354,7 @@ const FormularioPago = () => {
                                     )}
                                     
                                     {formData.tipo_pago === 'transferencia' && (
-                                        <Alert variant="info" className="d-flex align-items-center">
+                                        <Alert variant="info" className="payment-alert">
                                             <FaExchangeAlt className="me-2" size={24} />
                                             <div>
                                                 <strong>Transferencia bancaria</strong><br />
@@ -376,10 +368,8 @@ const FormularioPago = () => {
                                         </Alert>
                                     )}
                                     
-                                    {error && <Alert variant="danger">{error}</Alert>}
-                                    
-                                    <div className="d-grid gap-2 mt-4">
-                                        <Button variant="primary" type="submit" className="payment-btn">
+                                    <div className="payment-actions">
+                                        <Button variant="primary" type="submit" className="payment-submit-btn">
                                             {formData.tipo_pago === 'tarjeta' ? 'Pagar ahora' : 'Confirmar método de pago'}
                                         </Button>
                                     </div>
@@ -392,22 +382,33 @@ const FormularioPago = () => {
                 <Modal show={showModal} onHide={() => {
                     setShowModal(false);
                     navigate('/');
-                }} className="confirmation-modal">
+                }} className="payment-modal">
                     <Modal.Header closeButton>
                         <Modal.Title>Pago procesado</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         {pagoInfo && (
                             <>
-                                <p><strong>Referencia:</strong> {pagoInfo.referencia_pago}</p>
-                                <p><strong>Estado:</strong> {pagoInfo.estado_pago}</p>
+                                <div className="payment-result">
+                                    <div className="result-item">
+                                        <span className="result-label">Referencia:</span>
+                                        <span className="result-value">{pagoInfo.referencia_pago}</span>
+                                    </div>
+                                    <div className="result-item">
+                                        <span className="result-label">Estado:</span>
+                                        <span className={`result-value estado-${pagoInfo.estado_pago.toLowerCase()}`}>
+                                            {pagoInfo.estado_pago}
+                                        </span>
+                                    </div>
+                                </div>
+
                                 {pagoInfo.estado_pago === 'Aprobado' && (
-                                    <Alert variant="success">
+                                    <Alert variant="success" className="payment-alert">
                                         Tu pago ha sido aprobado. Hemos enviado un correo con los detalles de tu compra.
                                     </Alert>
                                 )}
                                 {pagoInfo.estado_pago === 'Pendiente' && (
-                                    <Alert variant="warning">
+                                    <Alert variant="warning" className="payment-alert">
                                         Tu pago está pendiente. Por favor completa el proceso según el método seleccionado.
                                     </Alert>
                                 )}
@@ -415,12 +416,21 @@ const FormularioPago = () => {
                         )}
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={() => {
+                    <div className="Colores-secu">
+                    <Button 
+                                onClick={() => navigate('/historial-compras')}
+                                className="btn-naranja"
+                                >
+                                Ir al historial de compras
+                                </Button>
+
+                        <Button className="cerrar" onClick={() => {
                             setShowModal(false);
                             navigate('/');
                         }}>
                             Cerrar
                         </Button>
+                    </div>
                     </Modal.Footer>
                 </Modal>
             </Container>

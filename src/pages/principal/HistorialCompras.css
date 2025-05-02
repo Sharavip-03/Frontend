@@ -1,0 +1,230 @@
+/* Contenedor principal específico para el historial */
+.historial-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+  }
+  
+  /* Título del historial */
+  .historial-container .historial-title {
+    color: #FF8C00;
+    margin-bottom: 30px;
+    font-weight: bold;
+  }
+  
+  /* Lista de compras */
+  .historial-container .compras-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  /* Tarjeta individual de compra */
+  .historial-container .compra-card {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    background-color: white;
+  }
+  
+  .historial-container .compra-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  /* Encabezado de la tarjeta */
+  .historial-container .compra-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  /* Badge de estado - IMPORTANTE: corregido para que no use clases de Bootstrap */
+  .historial-container .estado-badge {
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 50rem;
+  }
+  
+  .historial-container .estado-badge.estado-pendiente {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+  
+  .historial-container .estado-badge.estado-pagada {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  .historial-container .estado-badge.estado-completada {
+    background-color: #cce5ff;
+    color: #004085;
+  }
+  
+  /* Información de la compra */
+  .historial-container .compra-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .historial-container .info-label {
+    font-weight: bold;
+    color: #FF8C00;
+    margin-right: 5px;
+  }
+  
+  /* Lista de productos */
+  .historial-container .compra-productos {
+    margin-bottom: 15px;
+  }
+  
+  .historial-container .compra-productos h5 {
+    color: #FF8C00;
+    margin-bottom: 10px;
+  }
+  
+  .historial-container .compra-productos ul {
+    list-style-type: none;
+    padding-left: 0;
+  }
+  
+  .historial-container .compra-productos li {
+    padding: 5px 0;
+    border-bottom: 1px dashed #ddd;
+  }
+  
+  /* Acciones - Botones específicos para el historial */
+  .historial-container .compra-acciones {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  
+  .historial-container .compra-acciones .btn {
+    margin: 0;
+  }
+
+  .compra-acciones .btn-azul {
+    background-color: #FF8C00;
+    border-color: #FF8C00;
+    color: white;
+  }
+
+  .compra-acciones:hover .btn-azul {
+    background-color: #ffb152;
+    border-color: #FF8C00;
+    color: white;
+  }
+
+  
+    .compra-acciones .btn-rojo {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+    }
+
+    .compra-acciones:hover .btn-rojo {
+        background-color: #bb2d3b;
+        border-color: #bb2d3b;
+    }
+
+    .historial-container .volver-btn {
+        background-color: #ffb152;
+        border-color: #FF8C00;
+        color: white;
+    }
+
+    .historial-container:hover .volver-btn {
+        background-color: #ee9d3a;
+        border-color: #FF8C00;
+        color: white;
+    }
+  
+  .compra-acciones .btn-naranja {
+    background-color: #FF8C00;
+    border-color: #FF8C00;
+    color: white;
+  }
+
+  .compra-acciones:hover .btn-naranja {
+    background-color: #ffb152;
+    border-color: #FF8C00;
+    color: white;
+  }
+
+  .compra-acciones .btn-verde {
+    background-color: #e4f8c3;
+    border-color: #FF8C00;
+    color: rgb(165, 201, 132);
+  }
+
+  .compra-acciones:hover .btn-verde {
+    background-color: #c7e29a;
+    border-color: #FF8C00;
+    color: rgb(165, 201, 132);
+  }
+  
+  /* Clases específicas para botones del historial */
+  .historial-container .btn-naranja {
+    background-color: #FF8C00;
+    border-color: #FF8C00;
+    color: white;
+  }
+  
+  .historial-container .btn-naranja:hover {
+    background-color: #e07b00;
+    border-color: #e07b00;
+  }
+  
+  .historial-container .btn-rojo {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+  }
+  
+  .historial-container .btn-rojo:hover {
+    background-color: #bb2d3b;
+    border-color: #bb2d3b;
+  }
+  
+  /* Botón de volver */
+  .historial-container .volver-btn {
+    border-color: #6c757d;
+    color: #6c757d;
+  }
+  
+  .historial-container .volver-btn:hover {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  /* Loading */
+  .historial-container .historial-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .historial-container .compra-info {
+      grid-template-columns: 1fr;
+    }
+    
+    .historial-container .compra-acciones {
+      flex-direction: column;
+    }
+  }

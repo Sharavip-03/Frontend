@@ -8,8 +8,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import FormularioPago from './components/PasarelaPago/formulario.jsx';
 import axios from 'axios';
 import DetallesProducto from './pages/buscador/productos/DetallesProducto.jsx';
-// En tu archivo principal (App.jsx o similar)
 import Swal from 'sweetalert2';
+import HistorialCompras from './pages/principal/HistorialCompras.jsx';
 
 axios.interceptors.response.use(
   response => response,
@@ -55,6 +55,7 @@ function App() {
         <Route path="/search" element={<SearchResults />} />
         <Route path="/pago/:id_factura" element={<FormularioPago />} />
         <Route path="/producto/:id" element={<DetallesProducto />} />
+        <Route path="/historial-compras" element={<HistorialCompras />} />
         <Route path="/*" element={<Principal />} />
       </Routes>
     </Router>

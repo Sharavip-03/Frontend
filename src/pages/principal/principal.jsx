@@ -23,6 +23,7 @@ import { NavBar } from '../..//components/Navbar/Navbar'; // Componente personal
 import CircularGallery from './marcas'
 import SplitText from "./text";
 import Accordion from 'react-bootstrap/Accordion';
+import Marcas from './marcas'; 
 
 
 

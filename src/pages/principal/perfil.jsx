@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import "./perfil.css";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Button, Alert } from "react-bootstrap";
+import "./Perfil.css";
 
 const Perfil = () => {
   const images = [
@@ -9,10 +11,8 @@ const Perfil = () => {
     "https://images.unsplash.com/photo-1506903536293-8419385acdce?q=80&w=2034&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1677126907612-df3f0cb050a5?q=80&w=1974&auto=format&fit=crop"
   ];
-  const [cerrarClose, setCerrarClose] = useState(false); // este es para cerrar sesión 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fade, setFade] = useState(false);
-  const isLogged = localStorage.getItem("isLogged") === "true";
   const [user, setUser] = useState({
     nombres: "",
     apellidos: "",
@@ -20,113 +20,104 @@ const Perfil = () => {
     telefono: "",
     direccion: ""
   });
-  const [userTest, setUserTest] = useState([]);
-  const [nuevaContraseña, setNuevaContraseña] = useState("");
-  const [editando, setEditando] = useState(false);
-  const accessToken = localStorage.getItem("token");
-
-  const config = {
-    headers: {
-      Authorization: accessToken ? `Bearer ${accessToken}` : "",
-      "Cache-Control": "no-cache",
-    },
-  };
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const usuarioId = localStorage.getItem("id");
     if (!usuarioId) {
-      console.error("No hay usuario autenticado");
-      return;
-    }
-  
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(`http://127.0.0.1:5000/Priv/${usuarioId}`, config);
-        const clienteData = response.data.cliente;
-  
-        setUser({
-          nombres: clienteData.nombres,
-          apellidos: clienteData.apellidos,
-          email: clienteData.email,
-          telefono: clienteData.telefono,
-          direccion: clienteData.direccion,
-        });
-  
-        setUserTest(clienteData);
-      } catch (error) {
-        if (error.response && error.response.status === 401) {
-          // El interceptor ya manejará este caso
-          return;
-        }
-        console.error("Error al obtener datos:", error);
-        // Mostrar mensaje de error al usuario
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudieron cargar los datos del perfil',
-          confirmButtonText: 'Entendido'
-        });
-      }
-    };
-  
-    fetchData();
-  }, []);
-  const actualizarContraseña = () => {
-    const usuarioId = localStorage.getItem("id");
-    if (!usuarioId) {
-      console.error("No hay usuario autenticado");
+      setError("No hay usuario autenticado");
       return;
     }
 
-    fetch(`http://127.0.0.1:5000/Priv/${usuarioId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nueva_contrasena: nuevaContraseña }) // Se envía como `nueva_contrasena`
-    })
-      .then((response) => response.json())
-      .then(() => {
-        setNuevaContraseña("");
-        setEditando(false);
-      })
-      .catch((error) => console.error("Error al actualizar contraseña:", error));
-  };
+    const cargarPerfil = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`http://localhost:5000/Priv/${usuarioId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        setUser({
+          nombres: response.data.cliente.nombres,
+          apellidos: response.data.cliente.apellidos,
+          email: response.data.cliente.email,
+          telefono: response.data.cliente.telefono,
+          direccion: response.data.cliente.direccion,
+        });
+      } catch (err) {
+        setError(err.response?.data?.mensaje || "Error al cargar el perfil");
+      }
+    };
+
+    cargarPerfil();
+
+    // Cambiar imagen cada 5 segundos
+    const interval = setInterval(() => {
+      setFade(true);
+      setTimeout(() => {
+        setCurrentIndex((prev) => (prev + 1) % images.length);
+        setFade(false);
+      }, 500);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const cerrarSesion = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("id");
     localStorage.removeItem("isLogged");
-    setCerrarClose(true);
-    window.location.href = "/";
-
-  }
-
+    navigate("/");
+  };
 
   return (
     <div className="perfil-wrapper">
       <div className="perfil-lateral-container">
-      {!cerrarClose && (
         <img
           className={`perfil-lateral-imagen ${fade ? "fade-out" : "fade-in"}`}
           src={images[currentIndex]}
           alt="Imagen lateral"
         />
-      )}
-
       </div>
+      
       <div className="perfil-container">
         <div className="perfil-info-container">
           <h2 className="perfil-nombre">{user.nombres} {user.apellidos}</h2>
-          <p className="perfil-dato">Correo: {user.email}</p>
-          <p className="perfil-dato">Teléfono: {user.telefono}</p>
-          <p className="perfil-dato">Dirección: {user.direccion}</p>
-
-          <div className="perfil-contraseña-container">
-          <button type="button" className="perfil-boton" onClick={cerrarSesion} aria-label="Close">
-            Cerrar sesión
-            </button>
-
-
+          
+          <div className="perfil-datos">
+            <div className="perfil-dato">
+              <span className="dato-label">Correo:</span>
+              <span>{user.email}</span>
+            </div>
+            
+            <div className="perfil-dato">
+              <span className="dato-label">Teléfono:</span>
+              <span>{user.telefono || "No registrado"}</span>
+            </div>
+            
+            <div className="perfil-dato">
+              <span className="dato-label">Dirección:</span>
+              <span>{user.direccion || "No registrada"}</span>
+            </div>
           </div>
+          
+          <div className="perfil-botones">
+            <Button 
+              className="perfil-boton1"
+              onClick={() => navigate('/historial-compras')}
+            >
+              Ver Historial de Compras
+            </Button>
+            
+            <Button 
+              className="perfil-boton2"
+              onClick={cerrarSesion}
+            >
+              Cerrar Sesión
+            </Button>
+          </div>
+          
+          {error && <Alert variant="danger" className="perfil-error">{error}</Alert>}
         </div>
       </div>
     </div>

@@ -168,3 +168,25 @@
         padding: 1rem;
     }
 }
+
+.Colores-secu .btn-naranja {
+    background-color: #FF8357; /* Color de fondo naranja */
+    color: white; /* Color del texto */
+    border: none; /* Sin borde */
+    padding: 10px 10px; /* Espaciado interno */
+    border-radius: 5px; /* Bordes redondeados */
+    margin-right: 10px;
+    cursor: pointer; /* Cambia el cursor al pasar por encima */
+    transition: background-color 0.3s ease; /* Transición suave al cambiar el color de fondo */
+}
+
+.Colores-secu .cerrar {
+    background-color: #cc4339; /* Color de fondo naranja */
+    color: white; /* Color del texto */
+    border: none; /* Sin borde */
+    padding: 10px 10px; /* Espaciado interno */
+    border-radius: 5px; /* Bordes redondeados */
+    margin-right: 10px;
+    cursor: pointer; /* Cambia el cursor al pasar por encima */
+    transition: background-color 0.3s ease; /* Transición suave al cambiar el color de fondo */
+}
