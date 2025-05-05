@@ -1,0 +1,324 @@
+/* Contenedor principal */
+.factura-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  /* Título */
+  .factura-title {
+    color: #FF8C00;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .title-icon {
+    font-size: 1.8rem !important;
+  }
+  
+  /* Loading */
+  .factura-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .loading-icon {
+    font-size: 4rem !important;
+    color: #FF8C00;
+    animation: spin 1.5s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Alertas */
+  .error-alert, .empty-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+  }
+  
+  .alert-icon {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Tarjetas */
+  .factura-card, .productos-card {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    border: none;
+    position: relative;
+  }
+  
+  .factura-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background-color: #FF8C00;
+  }
+  
+  .section-title {
+    color: #FF8C00;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .section-icon {
+    font-size: 1.3rem !important;
+  }
+  
+  /* Grid de información */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+  }
+  
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+  }
+  
+  .info-icon {
+    color: #FF8C00;
+    font-size: 1.2rem !important;
+    min-width: 24px;
+  }
+  
+  .info-label {
+    font-weight: bold;
+    color: #6c757d;
+    min-width: 90px;
+  }
+  
+  .info-value {
+    color: #495057;
+  }
+  
+  /* Estado */
+  .estado-badge {
+    padding: 0.5em 1em;
+    font-size: 0.85em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 50rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .estado-badge.estado-pendiente {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+  
+  .estado-badge.estado-pagada {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  .estado-badge.estado-completada {
+    background-color: #cce5ff;
+    color: #004085;
+  }
+  
+  /* Referencia */
+  .reference-value {
+    font-family: 'Courier New', monospace;
+    background-color: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    word-break: break-all;
+  }
+  
+  /* Productos */
+  .productos-list {
+    margin-top: 20px;
+  }
+  
+  .producto-item {
+    padding: 15px 0;
+    border-bottom: 1px dashed #eee;
+  }
+  
+  .producto-item:last-child {
+    border-bottom: none;
+  }
+  
+  .producto-imagen {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .producto-img {
+    max-height: 100px;
+    object-fit: contain;
+    border-radius: 8px !important;
+  }
+  
+  .producto-info {
+    padding-left: 20px;
+  }
+  
+  .producto-nombre {
+    color: #343a40;
+    margin-bottom: 10px;
+  }
+  
+  .producto-detalles {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .producto-cantidad, .producto-precio, .producto-subtotal {
+    font-size: 0.95rem;
+  }
+  
+  .producto-subtotal {
+    font-weight: bold;
+    color: #FF8C00;
+  }
+  
+  /* Total */
+  .productos-total {
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 2px solid #eee;
+    max-width: 400px;
+    margin-left: auto;
+  }
+  
+  .total-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  
+  .total-label {
+    font-weight: bold;
+    color: #6c757d;
+  }
+  
+  .total-value {
+    font-weight: bold;
+    color: #495057;
+  }
+  
+  .grand-total {
+    font-size: 1.1rem;
+    padding-top: 10px;
+    border-top: 1px dashed #ddd;
+  }
+  
+  .grand-total .total-label {
+    color: #FF8C00;
+  }
+  
+  .grand-total .total-value {
+    color: #FF8C00;
+  }
+  
+  /* Botones */
+  .btn-volver {
+    background-color: #FF8C00;
+    border-color: #FF8C00;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    margin-top: 20px;
+  }
+  
+  .btn-volver:hover {
+    background-color: #e07b00;
+    border-color: #e07b00;
+    color: white;
+  }
+  
+  .btn-imprimir {
+    background-color: #FF8C00;
+    border-color: #FF8C00;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: 500;
+  }
+  
+  .btn-imprimir:hover {
+    background-color: #e07b00;
+    border-color: #e07b00;
+    color: white;
+  }
+  
+  .btn-icon {
+    font-size: 1.1rem !important;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .producto-detalles {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
+    
+    .productos-total {
+      max-width: 100%;
+    }
+  }
+  
+  @media print {
+    .btn-volver, .btn-imprimir {
+      display: none !important;
+    }
+    
+    .factura-container {
+      padding: 0;
+      background-color: white;
+    }
+    
+    .factura-card, .productos-card {
+      box-shadow: none;
+      border: 1px solid #ddd;
+    }
+  }

@@ -15,46 +15,6 @@ body, html {
   
 }
 
-/* Estilos para los dropdowns */
-.navbar-custom11 .dropdown-menu {
-  background-color: #fac172;
-  border: 1px solid #FF8C00;
-  min-width: 200px;
-}
-
-.navbar-custom11 .dropdown-item {
-  color: #333;
-  padding: 8px 16px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.navbar-custom11 .dropdown-item:hover {
-  background-color: #FF8C00;
-  color: white;
-}
-
-.dropdown-toggle::after {
-  display: none !important;
-}
-
-/* Alineación de los dropdowns */
-.navbar-nav {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-.dropdown {
-  position: static;
-}
-
-.dropdown-menu {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 100%;
-}
 /* Contenedor principal */
 .carrocel {
   padding: 15px 10px 15px 10px; /* Reduce el relleno para pantallas pequeñas */
@@ -326,46 +286,7 @@ footer .contact-text {
   color: #fac172;
 }
 
-/* Estilo del menú desplegable */
-.dropdown-menu {
-  display: none;
-  background-color: #f8f9fa;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-  min-width: 150px;
-  padding: 0.5rem 0;
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-}
 
-/* Estilo de los elementos dentro del menú desplegable */
-.dropdown-menu .dropdown-item {
-  display: block;
-  width: 100%;
-  padding: 0.75rem 1.5rem;
-  color: #333;
-  text-decoration: none;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  text-align: left;
-  white-space: nowrap;
-}
-
-/* Estilo al pasar el ratón sobre los items del dropdown */
-.dropdown-menu .dropdown-item:hover {
-  background-color: #FF8C00;
-  color: #fff;
-}
-
-
-/* Mostrar el menú cuando se pasa el ratón sobre el dropdown */
-.dropdown:hover .dropdown-menu {
-  display: block;
-  background-color: #fac172;
-}
 
 /* Efecto de animación sobre la imagen del botón */
 .dropdown img:hover {

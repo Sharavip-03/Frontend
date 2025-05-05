@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Container, Row, Col, Card, Button, Image, Spinner, Alert, Badge } from "react-bootstrap";
 import axios from "axios";
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { 
+  ArrowBack,
+  ShoppingCart,
+  ZoomIn,
+  LocalOffer,
+  CheckCircle,
+  Cancel,
+  Star,
+  StarHalf,
+  StarBorder
+} from '@mui/icons-material';
 import './detallesProducto.css';
 
 const DetallesProducto = () => {
@@ -13,9 +21,9 @@ const DetallesProducto = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [relatedProducts, setRelatedProducts] = useState([]);
-    const [allProducts, setAllProducts] = useState([]);
     const [cantidad, setCantidad] = useState(1);
     const [showZoomModal, setShowZoomModal] = useState(false);
+    const [rating, setRating] = useState(4.5);
 
     const urlAPI = 'http://127.0.0.1:5000';
 
@@ -24,7 +32,6 @@ const DetallesProducto = () => {
             try {
                 setLoading(true);
                 
-                // Obtener producto y descuentos
                 const [productResponse, discountsResponse] = await Promise.all([
                     axios.get(`${urlAPI}/PrivProd/${id}`),
                     axios.get(`${urlAPI}/descuentosProd`)
@@ -33,15 +40,13 @@ const DetallesProducto = () => {
                 const productData = productResponse.data.producto;
                 const allDiscounts = discountsResponse.data.descuentos || [];
                 
-                // Buscar si hay un descuento activo para este producto
                 const today = new Date();
                 const activeDiscount = allDiscounts.find(d => 
                     d.id_producto === productData.id_producto &&
-                    (!d.fecha_inicio || new Date(d.fecha_inicio) <= today) &&
-                    (!d.fecha_fin || new Date(d.fecha_fin) >= today)
+                    new Date(d.fecha_inicio) <= today &&
+                    new Date(d.fecha_fin) >= today
                 );
                 
-                // Agregar el descuento activo al producto si existe
                 if (activeDiscount) {
                     productData.descuento_activo = {
                         porcentaje_descuento: activeDiscount.porcentaje_descuento,
@@ -55,7 +60,13 @@ const DetallesProducto = () => {
                 setProducto(productData);
                 
                 const allProductsResponse = await axios.get(`${urlAPI}/PrivProd`);
-                setAllProducts(allProductsResponse.data?.productos || []);
+                const allProducts = allProductsResponse.data?.productos || [];
+                setRelatedProducts(
+                    allProducts.filter(p => 
+                        (p.id_categoria === productData.id_categoria || p.id_marca === productData.id_marca) && 
+                        p.id_producto !== productData.id_producto
+                    ).slice(0, 6)
+                );
                 setError(null);
             } catch (err) {
                 setError(`Error al cargar el producto: ${err.message}`);
@@ -67,23 +78,6 @@ const DetallesProducto = () => {
     
         fetchData();
     }, [id]);
-
-    useEffect(() => {
-        if (producto && allProducts.length > 0) {
-            findRelatedProducts();
-        }
-    }, [producto, allProducts]);
-
-    const findRelatedProducts = () => {
-        if (!producto) return;
-        
-        const related = allProducts.filter(p => 
-            (p.id_categoria === producto.id_categoria || p.id_marca === producto.id_marca) && 
-            p.id_producto !== producto.id_producto
-        );
-        
-        setRelatedProducts(related.slice(0, 6));
-    };
 
     const addToCart = async () => {
         try {
@@ -98,9 +92,7 @@ const DetallesProducto = () => {
                 id_producto: producto.id_producto,
                 cantidad: cantidad
             }, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             alert("Producto agregado al carrito");
@@ -110,237 +102,218 @@ const DetallesProducto = () => {
         }
     };
 
-    const handleQuantityChange = (newValue) => {
-        const value = Math.max(1, Math.min(producto.stock, parseInt(newValue) || 1));
+    const handleQuantityChange = (e) => {
+        const value = Math.max(1, Math.min(producto.stock, parseInt(e.target.value) || 1));
         setCantidad(value);
     };
 
-    const incrementQuantity = () => {
-        if (cantidad < producto.stock) {
-            setCantidad(cantidad + 1);
-        }
-    };
+    const incrementQuantity = () => cantidad < producto.stock && setCantidad(cantidad + 1);
+    const decrementQuantity = () => cantidad > 1 && setCantidad(cantidad - 1);
+    const toggleZoomModal = () => setShowZoomModal(!showZoomModal);
 
-    const decrementQuantity = () => {
-        if (cantidad > 1) {
-            setCantidad(cantidad - 1);
-        }
-    };
 
-    const toggleZoomModal = () => {
-        setShowZoomModal(!showZoomModal);
-    };
 
     if (loading) return (
-        <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-            <Spinner animation="border" role="status" style={{ color: '#FF8357' }}>
-                <span className="visually-hidden">Cargando...</span>
-            </Spinner>
+        <div className="product-loading">
+            <div className="spinner"></div>
+            <p>Cargando detalles del producto...</p>
         </div>
     );
 
     if (error) return (
-        <div className="text-center my-5">
-            <Alert variant="danger" className="mx-3">{error}</Alert>
-            <Button 
-                variant="danger" 
-                onClick={() => navigate(-1)}
-                className="mt-3"
-            >
-                Volver
-            </Button>
+        <div className="product-error">
+            <div className="error-content">
+                <Cancel className="error-icon" />
+                <h3>{error}</h3>
+                <button onClick={() => navigate('/')} className="back-button">
+                    <ArrowBack className="button-icon" />
+                    Volver al inicio
+                </button>
+            </div>
         </div>
     );
 
     if (!producto) return (
-        <div className="text-center my-5">
-            <Alert variant="warning" className="mx-3">Producto no encontrado</Alert>
-            <Button 
-                variant="danger" 
-                onClick={() => navigate(-1)}
-                className="mt-3"
-            >
-                Volver
-            </Button>
+        <div className="product-not-found">
+            <div className="not-found-content">
+                <Cancel className="error-icon" />
+                <h3>Producto no encontrado</h3>
+                <button onClick={() => navigate('/')} className="back-button">
+                    <ArrowBack className="button-icon" />
+                    Volver al inicio
+                </button>
+            </div>
         </div>
     );
 
     return (
-        <Container className="detalles-producto-container py-4">
-            {/* Botón para volver */}
-            <Button 
-                className="back-button"
-                onClick={() => navigate(-1)}
-            >
-                <ArrowBackIcon className="me-2" />
-                Volver
-            </Button>
+        <div className="product-detail-page">
+            {/* Header */}
+            <header className="product-header">
+                <button onClick={() => navigate('/')} className="back-button">
+                    <ArrowBack className="button-icon" />
+                    Volver
+                </button>
+                <h1 className="page-title">
+                    <LocalOffer className="title-icon" />
+                    Detalles del Producto
+                </h1>
+            </header>
 
-            {/* Detalles del producto */}
-            <Row className="mb-5">
-                <Col md={6} className="mb-4 mb-md-0">
-                    <div 
-                        className="product-image-container"
-                        onClick={toggleZoomModal}
-                    >
-                        <Image
-                            src={producto.imagen || "https://via.placeholder.com/500"}
+            {/* Main Content */}
+            <main className="product-main">
+                {/* Product Gallery */}
+                <section className="product-gallery">
+                    <div className="main-image" onClick={toggleZoomModal}>
+                        <img
+                            src={producto.imagen || "https://via.placeholder.com/600"}
                             alt={producto.nombre}
-                            fluid
-                            className="main-product-image"
-                            onError={(e) => {
-                                e.target.src = "https://via.placeholder.com/500";
-                            }}
+                            className="product-image"
                         />
-                                {producto.descuento_activo && (
-                                    <Badge pill className="discount-badge">
-                                        -{producto.descuento_activo.porcentaje_descuento}%
-                                    </Badge>
-                                )}
-                                <div className="zoom-hint">
-                            <span>Click para zoom</span>
+                        {producto.descuento_activo && (
+                            <span className="discount-tag">
+                                -{producto.descuento_activo.porcentaje_descuento}%
+                            </span>
+                        )}
+                        <div className="zoom-indicator">
+                            <ZoomIn className="zoom-icon" />
+                            Ampliar imagen
+                        </div>
+                    </div>
+                </section>
+
+                {/* Product Info */}
+                <section className="product-info">
+                    <div className="product-meta">
+                        <span className="category">{producto.categoria}</span>
+                        <span className="brand">{producto.marca}</span>
+                        <span className="animal">{producto.animal}</span>
+                    </div>
+
+                    <h2 className="product-name">{producto.nombre}</h2>
+
+                    <div className={`stock-status ${producto.estado.toLowerCase()}`}>
+                        {producto.estado === 'Disponible' ? (
+                            <CheckCircle className="status-icon" />
+                        ) : (
+                            <Cancel className="status-icon" />
+                        )}
+                        {producto.estado} {producto.stock > 0 && `(${producto.stock} disponibles)`}
+                    </div>
+
+
+
+                    <div className="price-section">
+                        {producto.precio_descuento ? (
+                            <>
+                                <span className="current-price">${producto.precio_descuento.toFixed(2)}</span>
+                                <span className="original-price">${producto.precio.toFixed(2)}</span>
+                                <span className="savings">
+                                    Ahorras ${(producto.precio - producto.precio_descuento).toFixed(2)} ({producto.descuento_activo.porcentaje_descuento}%)
+                                </span>
+                            </>
+                        ) : (
+                            <span className="current-price">${producto.precio.toFixed(2)}</span>
+                        )}
+                    </div>
+
+                    <div className="description-section">
+                        <h3>Descripción</h3>
+                        <p>{producto.descripcion || "Este producto no tiene descripción disponible."}</p>
+                    </div>
+
+                    <div className="quantity-section">
+                        <h3>Cantidad</h3>
+                        <div className="quantity-controls">
+                            <button 
+                                className="quantity-btn minus"
+                                onClick={decrementQuantity}
+                                disabled={cantidad <= 1}
+                            >
+                                −
+                            </button>
+                            <input 
+                                type="number" 
+                                min="1" 
+                                max={producto.stock} 
+                                value={cantidad}
+                                onChange={handleQuantityChange}
+                                className="quantity-input"
+                            />
+                            <button 
+                                className="quantity-btn plus"
+                                onClick={incrementQuantity}
+                                disabled={cantidad >= producto.stock}
+                            >
+                                +
+                            </button>
                         </div>
                     </div>
 
-                    {/* Modal de zoom */}
-                    {showZoomModal && (
-                        <div className="zoom-modal" onClick={toggleZoomModal}>
-                            <div className="zoom-modal-content">
-                                <Image
-                                    src={producto.imagen || "https://via.placeholder.com/500"}
-                                    alt={producto.nombre}
-                                    fluid
-                                    className="zoomed-image"
-                                />
-                            </div>
+                    <div className="action-section">
+                        <div className="total-price">
+                            <span>Total:</span>
+                            <span className="amount">
+                                ${(producto.precio_descuento ? producto.precio_descuento * cantidad : producto.precio * cantidad).toFixed(2)}
+                            </span>
                         </div>
-                    )}
-                </Col>
-                
-                <Col md={6}>
-                    <Card className="product-details-card">
-                        <Card.Body>
-                            <Card.Title className="product-title">{producto.nombre}</Card.Title>
-                            
-                            <Card.Subtitle className="product-subtitle mb-3">
-                                <span>{producto.marca}</span>
-                                <span>{producto.categoria}</span>
-                                <span>{producto.animal}</span>
-                            </Card.Subtitle>
-                            
-                            {/* Estado de stock */}
-                            <div className={`stock-status ${producto.estado === 'Disponible' ? 'available' : 'out-of-stock'}`}>
-                                {producto.estado} {producto.estado === 'Disponible' ? `(${producto.stock} en stock)` : ''}
-                            </div>
-                            
-                            {/* Precios */}
-                            <div className="price-container">
-                                {producto.precio_descuento ? (
-                                    <>
-                                        <span className="current-price">
-                                            ${producto.precio_descuento.toLocaleString()}
-                                        </span>
-                                        <span className="original-price">
-                                            ${producto.precio.toLocaleString()}
-                                        </span>
-                                        <div className="savings-text">
-                                            Ahorras: ${(producto.precio - producto.precio_descuento).toLocaleString()} ({producto.descuento_activo.porcentaje_descuento}%)
-                                        </div>
-                                    </>
-                                ) : (
-                                    <span className="current-price">
-                                        ${producto.precio.toLocaleString()}
-                                    </span>
-                                )}
-                            </div>
-                            
-                            <Card.Text className="product-description">
-                                {producto.descripcion}
-                            </Card.Text>
-                            
-                            {/* Controles de cantidad */}
-                            <div className="quantity-controls">
-                                <span className="quantity-label">Cantidad:</span>
-                                <div className="quantity-selector">
-                                    <Button 
-                                        variant="outline"
-                                        className="quantity-btn"
-                                        onClick={decrementQuantity}
-                                        disabled={cantidad <= 1}
-                                    >
-                                        -
-                                    </Button>
-                                    <Badge className="quantity-badge">
-                                        {cantidad}
-                                    </Badge>
-                                    <Button 
-                                        variant="outline"
-                                        className="quantity-btn"
-                                        onClick={incrementQuantity}
-                                        disabled={cantidad >= producto.stock}
-                                    >
-                                        +
-                                    </Button>
-                                </div>
-                                <div className="total-price">
-                                    Total: ${(producto.precio_descuento ? producto.precio_descuento * cantidad : producto.precio * cantidad).toLocaleString()}
-                                </div>
-                            </div>
-                            
-                            {/* Botón de añadir al carrito */}
-                            <Button 
-                                className="add-to-cart-btn"
-                                onClick={addToCart}
-                                disabled={producto.estado !== 'Disponible' || producto.stock <= 0}
-                            >
-                                <ShoppingCartIcon className="me-2" />
-                                {producto.stock <= 0 ? 'AGOTADO' : 'AÑADIR AL CARRITO'}
-                            </Button>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+                        <button 
+                            className="add-to-cart"
+                            onClick={addToCart}
+                            disabled={producto.estado !== 'Disponible' || producto.stock <= 0}
+                        >
+                            <ShoppingCart className="cart-icon" />
+                            {producto.stock <= 0 ? 'AGOTADO' : 'AÑADIR AL CARRITO'}
+                        </button>
+                    </div>
+                </section>
 
-            {/* Productos relacionados */}
-            {relatedProducts.length > 0 && (
-                <div className="related-products-section">
-                    <h3 className="related-products-title">Productos relacionados</h3>
-                    <Row xs={1} md={2} lg={3} className="g-4">
-                        {relatedProducts.map(product => (
-                            <Col key={product.id_producto}>
-                                <Card className="related-product-card">
-                                    <Card.Img 
-                                        variant="top" 
-                                        src={product.imagen} 
-                                        className="related-product-image"
-                                        onError={(e) => {
-                                            e.target.src = "https://via.placeholder.com/300";
-                                        }}
-                                    />
-                                    <Card.Body className="related-product-body">
-                                        <Card.Title className="related-product-title">
-                                            {product.nombre}
-                                        </Card.Title>
-                                        <Card.Subtitle className="related-product-subtitle">
-                                            {product.marca} • {product.categoria}
-                                        </Card.Subtitle>
-                                        <div className="related-product-price">
-                                            ${product.precio.toLocaleString()}
-                                        </div>
-                                        <Button 
-                                            className="view-details-btn"
+                {/* Related Products */}
+                {relatedProducts.length > 0 && (
+                    <section className="related-products">
+                        <h2 className="section-title">
+                            <LocalOffer className="section-icon" />
+                            Productos Relacionados
+                        </h2>
+                        <div className="related-grid">
+                            {relatedProducts.map(product => (
+                                <div key={product.id_producto} className="related-card">
+                                    <div className="related-image">
+                                        <img
+                                            src={product.imagen || "https://via.placeholder.com/300"}
+                                            alt={product.nombre}
+                                        />
+                                    </div>
+                                    <div className="related-info">
+                                        <h3 className="related-name">{product.nombre}</h3>
+                                        <div className="related-price">${product.precio.toFixed(2)}</div>
+                                        <button 
+                                            className="view-details"
                                             onClick={() => navigate(`/producto/${product.id_producto}`)}
                                         >
                                             Ver detalles
-                                        </Button>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        ))}
-                    </Row>
-                </div>
-            )}
-        </Container>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Zoom Modal */}
+                {showZoomModal && (
+                    <div className="image-zoom-modal" onClick={toggleZoomModal}>
+                        <div className="modal-content">
+                            <img
+                                src={producto.imagen || "https://via.placeholder.com/800"}
+                                alt={producto.nombre}
+                                className="zoomed-image"
+                            />
+                        </div>
+                    </div>
+                )}
+            </main>
+        </div>
     );
 };
 

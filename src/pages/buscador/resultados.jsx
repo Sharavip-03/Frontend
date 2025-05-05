@@ -29,7 +29,7 @@ const SearchResults = () => {
 
     // Paginación
     const [currentPage, setCurrentPage] = useState(1);
-    const [productsPerPage] = useState(9); // 9 productos por página (3x3 grid)
+    const [productsPerPage] = useState(9);
 
     // Datos para filtros
     const [categories, setCategories] = useState([]);
@@ -37,7 +37,6 @@ const SearchResults = () => {
     const [animals, setAnimals] = useState([]);
 
     const urlAPI = 'http://127.0.0.1:5000';
-
     const [cartItems, setCartItems] = useState([]);
 
     const addToCart = async (product) => {
@@ -78,40 +77,29 @@ const SearchResults = () => {
         }
     };
 
-    // Función de búsqueda optimizada
     const searchProducts = (products, query) => {
         if (!query.trim()) return products;
-        
         const searchTerm = query.toLowerCase().trim();
-        
         return products.filter(product => {
             if (!product.nombre) return false;
-            
             const productName = product.nombre.toLowerCase();
             return productName.includes(searchTerm);
         });
     };
 
-    // Obtener datos de la API
     useEffect(() => {
         const fetchData = async () => {
           try {
             setLoading(true);
             const category = queryParams.get("category");
             
-            // 1. Verificar estado de la base de datos
-            const debugRes = await axios.get(`${urlAPI}/debug/categorias`);
-            console.log("Estado de la base de datos:", debugRes.data);
-            
             let productsData = [];
             
-            // 2. Obtener productos según el filtro
             if (category) {
               const res = await axios.get(
                 `${urlAPI}/productos/categoria/${encodeURIComponent(category)}`
               );
               
-              // Verificar estructura de respuesta
               if (Array.isArray(res.data)) {
                 productsData = res.data;
               } else {
@@ -123,7 +111,6 @@ const SearchResults = () => {
               productsData = res.data?.productos || [];
             }
             
-            // 3. Obtener datos para filtros
             const [categoriesRes, brandsRes, animalsRes] = await Promise.all([
               axios.get(`${urlAPI}/categoria`),
               axios.get(`${urlAPI}/PrivMarcas`),
@@ -135,7 +122,6 @@ const SearchResults = () => {
             setBrands(brandsRes.data?.marcas || []);
             setAnimals(animalsRes.data?.animales || []);
             
-            // 4. Mostrar advertencia si no hay productos
             if (productsData.length === 0 && category) {
               setError(`No se encontraron productos para "${category}". Verifica los datos en la consola.`);
             } else {
@@ -154,7 +140,6 @@ const SearchResults = () => {
         fetchData();
       }, [searchQuery, location.search]);
       
-    // Filtrado combinado (búsqueda + filtros)
     const filteredProducts = useMemo(() => {
         let result = searchProducts(products, searchQuery);
         
@@ -175,7 +160,6 @@ const SearchResults = () => {
         return result;
     }, [products, searchQuery, categoryFilter, brandFilter, animalFilter, priceRange]);
 
-    // Paginación
     const indexOfLastProduct = currentPage * productsPerPage;
     const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
     const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
@@ -194,256 +178,271 @@ const SearchResults = () => {
         setBrandFilter("");
         setAnimalFilter("");
         setPriceRange([0, 1000000]);
-        setCurrentPage(1); // Resetear a la primera página al limpiar filtros
+        setCurrentPage(1);
     };
 
     if (loading) return (
         <div className="search-loading-container">
-            <div className="text-center my-5">Cargando productos...</div>
+            <div className="loading-spinner"></div>
+            <p>Cargando productos...</p>
         </div>
     );
     
     if (error) return (
         <div className="search-error-container">
-            <div className="text-center my-5 text-danger">{error}</div>
+            <div className="error-message">{error}</div>
+            <Button className="retry-button" onClick={() => window.location.reload()}>
+                Reintentar
+            </Button>
         </div>
     );
 
     return (
-        <div className="search-page-container">
-            {/* Navbar personalizado */}
-            <Navbar expand="lg" className="search-navbar sticky-top">
-                <Container fluid>
-                    {/* Botón para volver atrás */}
-                    <Button 
-                        variant="link" 
-                        className="text-white navbar-icon"
+        <div className="search-app-container">
+            {/* Barra de navegación superior */}
+            <nav className="search-top-nav">
+                <div className="nav-content">
+                    <button 
+                        className="nav-back-button"
                         onClick={() => navigate('/')}
                     >
                         <ArrowBackIcon fontSize="large" />
-                    </Button>
+                    </button>
                     
-                    {/* Buscador centrado */}
-                    <div className="search-bar-container">
+                    <div className="search-bar-wrapper">
                         <SearchBar />
                     </div>
                     
-                    {/* Botón de filtros */}
-                    <Button 
-                        variant="link" 
-                        className="text-white navbar-icon ms-auto"
+                    <button 
+                        className="nav-filter-button"
                         onClick={() => setShowFilters(true)}
                     >
                         <FilterListIcon fontSize="large" />
-                    </Button>
-                </Container>
-            </Navbar>
+                    </button>
+                </div>
+            </nav>
 
-            {/* Contenido principal con margen superior */}
-            <div className="search-main-content">
-                {/* Offcanvas para filtros */}
-                <Offcanvas 
-                    show={showFilters} 
-                    onHide={() => setShowFilters(false)}
-                    placement="end"
-                    className="search-filters-offcanvas"
-                >
-                    <Offcanvas.Header closeButton closeVariant="white">
-                        <Offcanvas.Title>
-                            <h3 className="text-white">
-                                <FilterListIcon className="me-2" />
-                                Filtros
-                            </h3>
-                        </Offcanvas.Title>
-                    </Offcanvas.Header>
-                    <Offcanvas.Body>
-                        <div className="d-flex flex-column gap-3">
-                            <Form.Group>
-                                <Form.Label className="text-white">Categoría</Form.Label>
-                                <Form.Select 
-                                    value={categoryFilter}
-                                    onChange={(e) => setCategoryFilter(e.target.value)}
-                                    className="filter-select"
-                                >
-                                    <option value="">Todas las categorías</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id_categoria} value={cat.id_categoria}>
-                                            {cat.nombre}
-                                        </option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                            
-                            <Form.Group>
-                                <Form.Label className="text-white">Marca</Form.Label>
-                                <Form.Select 
-                                    value={brandFilter}
-                                    onChange={(e) => setBrandFilter(e.target.value)}
-                                    className="filter-select"
-                                >
-                                    <option value="">Todas las marcas</option>
-                                    {brands.map(brand => (
-                                        <option key={brand.id_marca} value={brand.id_marca}>
-                                            {brand.nombre}
-                                        </option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                            
-                            <Form.Group>
-                                <Form.Label className="text-white">Animal</Form.Label>
-                                <Form.Select 
-                                    value={animalFilter}
-                                    onChange={(e) => setAnimalFilter(e.target.value)}
-                                    className="filter-select"
-                                >
-                                    <option value="">Todos los animales</option>
-                                    {animals.map(animal => (
-                                        <option key={animal.id_animal} value={animal.id_animal}>
-                                            {animal.nombre}
-                                        </option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                            
-                            <Form.Group>
-                                <Form.Label className="text-white">
-                                    Precio: ${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()}
-                                </Form.Label>
-                                <Form.Range 
-                                    min="0" 
-                                    max="1000000" 
-                                    step="10000"
-                                    value={priceRange[1]} 
-                                    onChange={(e) => handlePriceChange(e, 1)}
-                                    className="filter-range"
-                                />
-                            </Form.Group>
-                            
-                            <div className="d-flex gap-2 mt-3">
-                                <Button 
-                                    variant="outline-light" 
-                                    onClick={clearFilters}
-                                    className="flex-grow-1"
-                                >
-                                    Limpiar filtros
-                                </Button>
-                                <Button 
-                                    variant="light" 
-                                    onClick={() => setShowFilters(false)}
-                                    className="flex-grow-1"
-                                >
-                                    Aplicar
-                                </Button>
-                            </div>
+            {/* Contenido principal */}
+            <main className="search-main-content">
+                {/* Panel de filtros deslizable */}
+                <div className={`filter-panel ${showFilters ? 'open' : ''}`}>
+                    <div className="filter-header">
+                        <h3>
+                            <FilterListIcon className="filter-icon" />
+                            Filtros
+                        </h3>
+                        <button 
+                            className="close-filters"
+                            onClick={() => setShowFilters(false)}
+                        >
+                            &times;
+                        </button>
+                    </div>
+                    <div className="filter-body">
+                        <div className="filter-group">
+                            <label>Categoría</label>
+                            <select 
+                                value={categoryFilter}
+                                onChange={(e) => setCategoryFilter(e.target.value)}
+                            >
+                                <option value="">Todas las categorías</option>
+                                {categories.map(cat => (
+                                    <option key={cat.id_categoria} value={cat.id_categoria}>
+                                        {cat.nombre}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
-                    </Offcanvas.Body>
-                </Offcanvas>
+                        
+                        <div className="filter-group">
+                            <label>Marca</label>
+                            <select 
+                                value={brandFilter}
+                                onChange={(e) => setBrandFilter(e.target.value)}
+                            >
+                                <option value="">Todas las marcas</option>
+                                {brands.map(brand => (
+                                    <option key={brand.id_marca} value={brand.id_marca}>
+                                        {brand.nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        <div className="filter-group">
+                            <label>Animal</label>
+                            <select 
+                                value={animalFilter}
+                                onChange={(e) => setAnimalFilter(e.target.value)}
+                            >
+                                <option value="">Todos los animales</option>
+                                {animals.map(animal => (
+                                    <option key={animal.id_animal} value={animal.id_animal}>
+                                        {animal.nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        <div className="filter-group">
+                            <label>
+                                Precio: ${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()}
+                            </label>
+                            <input 
+                                type="range" 
+                                min="0" 
+                                max="1000000" 
+                                step="10000"
+                                value={priceRange[1]} 
+                                onChange={(e) => handlePriceChange(e, 1)}
+                            />
+                        </div>
+                        
+                        <div className="filter-actions">
+                            <button 
+                                className="clear-filters"
+                                onClick={clearFilters}
+                            >
+                                Limpiar filtros
+                            </button>
+                            <button 
+                                className="apply-filters"
+                                onClick={() => setShowFilters(false)}
+                            >
+                                Aplicar
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-                {/* Resultados */}
-                <Container className="search-results-container">
-                    <h2 className="text-center mb-4 search-results-title">
+                {/* Resultados de búsqueda */}
+                <div className="search-results-area">
+                    <h2 className="results-title">
                         {searchQuery ? `Resultados para "${searchQuery}"` : "Todos los productos"}
-                        <small className="d-block text-muted">{filteredProducts.length} producto(s) encontrado(s)</small>
+                        <span>{filteredProducts.length} producto(s) encontrado(s)</span>
                     </h2>
                     
                     {filteredProducts.length === 0 ? (
-                        <div className="text-center my-5 no-results-message">
-                            <h4>No se encontraron productos</h4>
+                        <div className="no-results-message">
+                            <h3>No se encontraron productos</h3>
                             <p>Intenta con otros términos de búsqueda o ajusta los filtros</p>
-                            <Button 
-                                className="mt-3"
+                            <button 
+                                className="show-all-button"
                                 onClick={clearFilters}
                             >
                                 Mostrar todos
-                            </Button>
+                            </button>
                         </div>
                     ) : (
                         <>
-                            <Row xs={1} md={2} lg={3} className="g-4 products-grid">
+                            <div className="products-grid">
                                 {currentProducts.map(product => (
-                                    <Col key={product.id_producto} className="product-col">
-                                        <Card className="h-100 shadow-sm product-card">
-                                            <Card.Img 
-                                                variant="top" 
+                                    <div key={product.id_producto} className="product-card">
+                                        {product.precio_descuento && (
+                                            <div className="discount-badge">
+                                                {Math.round(100 - (product.precio_descuento * 100 / product.precio))}% OFF
+                                            </div>
+                                        )}
+                                        {product.stock <= 0 && (
+                                            <div className="sold-out-badge">AGOTADO</div>
+                                        )}
+                                        <div className="product-image-container">
+                                            <img 
                                                 src={product.imagen} 
-                                                className="product-image"
+                                                alt={product.nombre}
                                                 onError={(e) => {
                                                     e.target.src = "https://via.placeholder.com/300";
                                                 }}
                                             />
-                                            <Card.Body className="d-flex flex-column product-card-body">
-                                                <Card.Title className="product-title">{product.nombre}</Card.Title>
-                                                <Card.Subtitle className="mb-2 text-muted product-subtitle">
-                                                    {product.marca} - {product.categoria}
-                                                </Card.Subtitle>
-                                                <Card.Text className="flex-grow-1 product-description">
-                                                    {product.descripcion?.substring(0, 100)}...
-                                                </Card.Text>
-                                                <div className="d-flex justify-content-between align-items-center mt-3 product-price">
-                                                    <div>
-                                                    {product.precio_descuento ? (
-                                                        <>
-                                                        <span className="h5 text-danger me-2">
+                                        </div>
+                                        <div className="product-info">
+                                            <h3 className="product-title">{product.nombre}</h3>
+                                            <p className="product-category">{product.marca} - {product.categoria}</p>
+                                            <p className="product-description">
+                                                {product.descripcion?.substring(0, 100)}...
+                                            </p>
+                                            <div className="product-price-section">
+                                                {product.precio_descuento ? (
+                                                    <>
+                                                        <span className="current-price">
                                                             ${product.precio_descuento.toLocaleString()}
                                                         </span>
-                                                        <span className="text-decoration-line-through text-muted">
+                                                        <span className="original-price">
                                                             ${product.precio.toLocaleString()}
                                                         </span>
-                                                        </>
-                                                    ) : (
-                                                        <span className="h5">
+                                                    </>
+                                                ) : (
+                                                    <span className="current-price">
                                                         ${product.precio.toLocaleString()}
-                                                        </span>
-                                                    )}
-                                                    </div>
-                                                </div>
-                                                <div className="d-flex justify-content-between mt-3 product-actions">
-                                                    <Button 
-                                                        onClick={() => navigate(`/producto/${product.id_producto}`)}
-                                                        className="details-button"
-                                                    >
-                                                        Ver detalles
-                                                    </Button>
-                                                    <Button 
-                                                        onClick={() => addToCart(product)}
-                                                        className="cart-button"
-                                                    >
-                                                        <ShoppingCartIcon className="me-1" />
-                                                    </Button>
-                                                </div>
-                                            </Card.Body>
-                                        </Card>
-                                    </Col>
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="product-actions">
+                                                <button 
+                                                    onClick={() => navigate(`/producto/${product.id_producto}`)}
+                                                    className="details-button"
+                                                >
+                                                    Ver detalles
+                                                </button>
+                                                <button 
+                                                    onClick={() => addToCart(product)}
+                                                    className="cart-button"
+                                                    disabled={product.stock <= 0}
+                                                >
+                                                    <ShoppingCartIcon />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
-                            </Row>
+                            </div>
 
                             {/* Paginación */}
                             {totalPages > 1 && (
-                                <div className="d-flex justify-content-center mt-4">
-                                    <Pagination>
-                                        <Pagination.First onClick={() => paginate(1)} disabled={currentPage === 1} />
-                                        <Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
+                                <div className="pagination-container">
+                                    <ul className="pagination">
+                                        <li 
+                                            className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}
+                                            onClick={() => paginate(1)}
+                                        >
+                                            <span className="page-link">«</span>
+                                        </li>
+                                        <li 
+                                            className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}
+                                            onClick={() => paginate(currentPage - 1)}
+                                        >
+                                            <span className="page-link">‹</span>
+                                        </li>
                                         
                                         {[...Array(totalPages).keys()].map(number => (
-                                            <Pagination.Item 
+                                            <li 
                                                 key={number + 1} 
-                                                active={number + 1 === currentPage}
+                                                className={`page-item ${number + 1 === currentPage ? 'active' : ''}`}
                                                 onClick={() => paginate(number + 1)}
                                             >
-                                                {number + 1}
-                                            </Pagination.Item>
+                                                <span className="page-link">{number + 1}</span>
+                                            </li>
                                         ))}
                                         
-                                        <Pagination.Next onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} />
-                                        <Pagination.Last onClick={() => paginate(totalPages)} disabled={currentPage === totalPages} />
-                                    </Pagination>
+                                        <li 
+                                            className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}
+                                            onClick={() => paginate(currentPage + 1)}
+                                        >
+                                            <span className="page-link">›</span>
+                                        </li>
+                                        <li 
+                                            className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}
+                                            onClick={() => paginate(totalPages)}
+                                        >
+                                            <span className="page-link">»</span>
+                                        </li>
+                                    </ul>
                                 </div>
                             )}
                         </>
                     )}
-                </Container>
-            </div>
+                </div>
+            </main>
         </div>
     );
 };

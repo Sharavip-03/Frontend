@@ -5,9 +5,6 @@ import Carousel from 'react-bootstrap/Carousel';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import { useNavigate } from 'react-router-dom'; // Para la navegación
-import collarImg from '../../assets/images/collar.png';
-import camaImg from '../../assets/images/camas.jpg';  
-import juguetesImg from '../../assets/images/juguetes.jpg';
 import banner1 from '../../assets/images/banner-1.png';
 import banner2 from '../../assets/images/banner-2.png';
 import banner3 from '../../assets/images/banner-3.png'
@@ -20,10 +17,10 @@ import FacebookOutlinedIcon from '@mui/icons-material/FacebookOutlined';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import XIcon from '@mui/icons-material/X';
 import { NavBar } from '../..//components/Navbar/Navbar'; // Componente personalizado
-import CircularGallery from './marcas'
+import Marcas from './marcas';
 import SplitText from "./text";
 import Accordion from 'react-bootstrap/Accordion';
-import Marcas from './marcas'; 
+import perro from "../../assets/images/perro.png";
 
 
 
@@ -31,47 +28,23 @@ const Principal = () => {
   const navigate = useNavigate();
 
   // Función para manejar la redirección
-  const handleCategoryClick = (categoryType, animal) => {
-    // Normalizar nombres para la API
-    const categoriasMap = {
-      'Camas': 'camas',
-      'Accesorios': 'accesorios',
-      'Comidas': 'comida',
-      'Juguetes': 'juguetes'
-    };
-    
-    const animalesMap = {
-      'gatos': 'gato',
-      'perros': 'perro',
-      'otros': 'otros'
-    };
-    
-    const categoriaNormalizada = categoriasMap[categoryType] || categoryType.toLowerCase();
-    const animalNormalizado = animalesMap[animal] || animal.toLowerCase();
-    
-    navigate(`/search?category=${encodeURIComponent(`${categoriaNormalizada} para ${animalNormalizado}`)}`);
+  const handleCategoryClick = (category) => {
+    navigate(`/categorias/categorias.php?category=${encodeURIComponent(category)}`);
   };
+
   // Estado para controlar cada dropdown
   const [isOpen1, setIsOpen1] = useState(false);
   const [isOpen2, setIsOpen2] = useState(false);
   const [isOpen3, setIsOpen3] = useState(false);
 
+  // Funciones para manejar la apertura y cierre con el cursor
+  const handleMouseEnter1 = () => setIsOpen1(true);
+  const handleMouseEnter2 = () => setIsOpen2(true);
+  const handleMouseEnter3 = () => setIsOpen3(true);
 
-  // Reemplaza los estados individuales con un objeto
-  const [dropdownStates, setDropdownStates] = useState({
-    gatos: false,
-    perros: false,
-    otros: false
-  });
-
-  // Función genérica para manejar hover
-  const handleMouseEnter = (dropdown) => {
-    setDropdownStates(prev => ({ ...prev, [dropdown]: true }));
-  };
-
-  const handleMouseLeave = (dropdown) => {
-    setDropdownStates(prev => ({ ...prev, [dropdown]: false }));
-  };
+  const handleMouseLeave1 = () => setIsOpen1(false);
+  const handleMouseLeave2 = () => setIsOpen2(false);
+  const handleMouseLeave3 = () => setIsOpen3(false);
 
 
   const handleAnimationComplete = () => {
@@ -82,86 +55,64 @@ const Principal = () => {
     <>
     <NavBar />
       {/* Menu Desplegable */}
-        <nav className="navbar navbar-custom11">
-    <div className="container-fluid">
-      <ul className="navbar-nav flex-row w-100">
-        {/* Dropdown Gatos */}
-        <li
-          className="dropdown mx-3"
-          onMouseEnter={() => handleMouseEnter('gatos')}
-          onMouseLeave={() => handleMouseLeave('gatos')}
-        >
-          <DropdownButton
-            id="dropdown-basic-button1"
-            title={
-              <>
-                <img src={gato} alt="Cat" style={{ width: '24px', marginRight: '8px' }} />
-                Gatos
-              </>
-            }
-            show={dropdownStates.gatos}
-            onMouseEnter={() => handleMouseEnter('gatos')}
-          >
-            <Dropdown.Item onClick={() => handleCategoryClick('Camas', 'gatos')}>Camas</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleCategoryClick('Accesorios', 'gatos')}>Accesorios</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleCategoryClick('Comida', 'gatos')}>Comidas</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleCategoryClick('Juguetes', 'gatos')}>Juguetes</Dropdown.Item>
-          </DropdownButton>
-        </li>
-
-        {/* Dropdown Otros animales */}
-        <li
-          className="dropdown mx-3"
-          onMouseEnter={() => handleMouseEnter('otros')}
-          onMouseLeave={() => handleMouseLeave('otros')}
-        >
-          <DropdownButton
-            id="dropdown-basic-button2"
-            title={
-              <>
-                <img src={animales} alt="Other animals" style={{ width: '24px', marginRight: '8px' }} />
-                Otros animales
-              </>
-            }
-            show={dropdownStates.otros}
-            onMouseEnter={() => handleMouseEnter('otros')}
-          >
-            <Dropdown.Item onClick={() => handleCategoryClick('Camas', 'otros')}>Camas</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleCategoryClick('Accesorios', 'otros')}>Accesorios</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleCategoryClick('Comida', 'otros')}>Comidas</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleCategoryClick('Juguetes', 'otros')}>Juguetes</Dropdown.Item>
-            <Dropdown.Item onClick={() => navigate('/search?otros_animales=true')}>
-              Todos los productos
-            </Dropdown.Item>
-          </DropdownButton>
-        </li>
-
-        {/* Dropdown Perros */}
-        <li
-          className="dropdown mx-3"
-          onMouseEnter={() => handleMouseEnter('perros')}
-          onMouseLeave={() => handleMouseLeave('perros')}
-        >
-          <DropdownButton
-            id="dropdown-basic-button3"
-            title={
-              <>
-                <img src={dog} alt="Dog" style={{ width: '24px', marginRight: '8px' }} />
-                Perros
-              </>
-            }
-            show={dropdownStates.perros}
-            onMouseEnter={() => handleMouseEnter('perros')}
-          >
-            <Dropdown.Item onClick={() => handleCategoryClick('Camas', 'perros')}>Camas</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleCategoryClick('Accesorios', 'perros')}>Accesorios</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleCategoryClick('Comida', 'perros')}>Comidas</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleCategoryClick('Juguetes', 'perros')}>Juguetes</Dropdown.Item>
-          </DropdownButton>
-        </li>
-      </ul>
-    </div>
-  </nav>
+      <nav className="navbar navbar-custom11">
+        <div className="container-fluid">
+          <ul className="navbar-nav flex-row w-100">
+            {/* Dropdown Gatos */}
+            <li
+              className="dropdown mx-3"
+              onMouseEnter={handleMouseEnter1}
+              onMouseLeave={handleMouseLeave1}
+            >
+              <DropdownButton
+                id="dropdown-basic-button1"
+                title={
+                  <>
+                    <img src={gato} alt="Cat" />
+                    Gatos
+                  </>
+                }
+              >
+              </DropdownButton>
+            </li>
+            {/* Dropdown Otros animales */}
+            <li
+              className="dropdown mx-3"
+              onMouseEnter={handleMouseEnter2}
+              onMouseLeave={handleMouseLeave2}
+            >
+              <DropdownButton
+                id="dropdown-basic-button2"
+                title={
+                  <>
+                    <img src={animales} alt="Other animals" />
+                    Otros animales
+                  </>
+                }
+              >
+              </DropdownButton>
+            </li>
+            {/* Dropdown Perros */}
+            <li
+              className="dropdown mx-3"
+              onMouseEnter={handleMouseEnter3}
+              onMouseLeave={handleMouseLeave3}
+            >
+              <DropdownButton
+                id="dropdown-basic-button3"
+                title={
+                  <>
+                    <img src={dog} alt="Dog" />
+                    Perros
+                  </>
+                }
+              >
+              
+              </DropdownButton>
+            </li>
+          </ul>
+        </div>
+      </nav>
       
       <br />
       <hr />
@@ -190,7 +141,8 @@ const Principal = () => {
       <hr />
 
       {/* Categorías */}
-      <div className="contenedor0">
+      <div className="contenedor0" id="categorias">
+      
   <center>
     <SplitText
       text="Categorias"
@@ -245,8 +197,8 @@ const Principal = () => {
       <br />
 
 
-  {/* Marcas */}
-  <div className="container my-4">
+   {/* Marcas */}
+   <div className="container my-4" id="marcas">
       <center>
         <SplitText
           text="Marcas"
@@ -266,8 +218,6 @@ const Principal = () => {
 
 
 
-
-
       
 
       <br />
@@ -276,7 +226,7 @@ const Principal = () => {
 
 
       {/* Mapa interactivo */}
-      <div className="container info-mapa">
+      <div className="container info-mapa" id="nosostros">
   <div className="row">
     <div className="col-12 col-md-6">
       <div className="info">
@@ -298,7 +248,7 @@ const Principal = () => {
         <Accordion.Header>Estamos aqui para tus mascotas</Accordion.Header>
         <Accordion.Body>
         <img 
-      src="https://images.unsplash.com/photo-1516453734593-8d198ae84bcf?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8dGllbmRhJTIwZGUlMjBtYXNjb3Rhc3xlbnwwfDB8MHx8fDI%3D" 
+      src={perro} 
       alt="Tienda de Mascotas" 
       style={{ width: "100%", height: "auto", borderRadius: "8px" }} 
     />

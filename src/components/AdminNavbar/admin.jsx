@@ -90,7 +90,6 @@ const Menu = () => {
             text="Ventas" 
             subItems={[
               { name: "Descuentos", path: "/admin/descuentos" },
-              { name: "Formularios de pago", path: "/admin/metodos-pago" }
             ]} 
           />
           <SidebarItem 
@@ -104,7 +103,7 @@ const Menu = () => {
             icon={<FaFileInvoice />} 
             text="Reportes" 
             subItems={[
-              { name: "Ver reportes", path: "/admin/reportes" }
+              { name: "Ver reportes", path: "/admin/dashboard" }
             ]} 
           />
         </nav>

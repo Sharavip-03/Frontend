@@ -28,7 +28,7 @@
     transition: background-color 0.3s ease;
 }
 
-.perfil-botones:hover .perfil-boton1 {
+.perfil-botones .perfil-boton1:hover {
     margin: 5px;
     padding: 10px 20px;
     background-color: #aa3a12;
@@ -38,6 +38,29 @@
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
+
+.perfil-botones .perfil-boton3 {
+    margin: 5px;
+    padding: 10px 20px;
+    background-color: #d46238;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.perfil-botones .perfil-boton3:hover {
+    margin: 5px;
+    padding: 10px 20px;
+    background-color: #c95227;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
 
 .perfil-botones .perfil-boton2 {
     margin: 5px;
@@ -50,7 +73,7 @@
     transition: background-color 0.3s ease;
 }
 
-.perfil-botones:hover .perfil-boton2 {
+.perfil-botones .perfil-boton2:hover {
     margin: 5px;
     padding: 10px 20px;
     background-color: #6b0f0f;
