@@ -3,11 +3,15 @@ import './empleados.css';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
 import Menu from '../../components/AdminNavbar/admin';
-
-const apiUrl = 'http://localhost:5000';
+import API_BASE_URL from '../../config/apiConfig';
+import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
+import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
 
 const AdminEmpleados = () => {
   const [empleados, setEmpleados] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [tiposDoc, setTiposDoc] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isNewEmployee, setIsNewEmployee] = useState(false);
@@ -26,20 +30,22 @@ const AdminEmpleados = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      await fetchTiposDoc(); // Primero obtenemos los tipos de documento
+      await fetchTiposDoc();
     };
     fetchData();
   }, []);
   
   useEffect(() => {
     if (tiposDoc.length > 0) {
-      fetchEmpleados(); // Solo se ejecuta cuando `tiposDoc` ya tiene datos
+      fetchEmpleados();
     }
-  }, [tiposDoc]); // Se ejecuta cada vez que `tiposDoc` cambia
-  
+  }, [tiposDoc]);
+
+  useEffect(() => {
+    setFilteredData(empleados);
+  }, [empleados]);
 
   const fetchEmpleados = async () => {
-    
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -47,7 +53,7 @@ const AdminEmpleados = () => {
         return;
       }
 
-      const response = await axios.get(`${apiUrl}/adminPrivEm`, {
+      const response = await axios.get(`${API_BASE_URL}/adminPrivEm`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -64,11 +70,16 @@ const AdminEmpleados = () => {
     } catch (error) {
       console.error("Error al obtener los empleados:", error.response?.data || error.message);
     }
-
-    
   };
 
-
+  const fetchTiposDoc = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/tipo_doc`);
+      setTiposDoc(response.data.tipo_docs || response.data);
+    } catch (error) {
+      console.error("Error al obtener los tipos de documento:", error);
+    }
+  };
 
   const handleAddEmployee = () => {
     setIsNewEmployee(true);
@@ -109,7 +120,7 @@ const AdminEmpleados = () => {
       const employeeData = {
         ...editEmployee,
         tipo_doc: parseInt(editEmployee.tipo_doc),
-        id_rol: 3 // Asegurar que el rol de empleado se mantenga
+        id_rol: 3
       };
 
       if (!isNewEmployee && !employeeData.contrasena) {
@@ -127,12 +138,12 @@ const AdminEmpleados = () => {
           alert('La contraseña es requerida para nuevos empleados');
           return;
         }
-        await axios.post(`${apiUrl}/adminPrivEm`, employeeData, {
+        await axios.post(`${API_BASE_URL}/adminPrivEm`, employeeData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         alert('Empleado creado exitosamente');
       } else {
-        await axios.put(`${apiUrl}/adminPrivEm/${editEmployee.id_usuario}`, employeeData, {
+        await axios.put(`${API_BASE_URL}/adminPrivEm/${editEmployee.id_usuario}`, employeeData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         alert('Empleado actualizado exitosamente');
@@ -147,6 +158,10 @@ const AdminEmpleados = () => {
   };
   
   const toggleEmpleadosEstado = async (id_usuario, estadoActual) => {
+    if (!window.confirm(`¿Estás seguro que deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} este empleado?`)) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -157,35 +172,37 @@ const AdminEmpleados = () => {
       const nuevoEstado = estadoActual === 'Activo' ? 'Inactivo' : 'Activo';
 
       const response = await axios.patch(
-        `${apiUrl}/adminPrivEm/${id_usuario}`, 
+        `${API_BASE_URL}/adminPrivEm/${id_usuario}`, 
         { estado: nuevoEstado }, 
         { headers: { Authorization: `Bearer ${token}` }}
       );
 
       if (response.status === 200) {
         setEmpleados(prevEmpleados => 
-          prevEmpleados.map(usuario => 
-            usuario.id_usuario === id_usuario 
-              ? { ...usuario, estado: nuevoEstado }
-              : usuario
+          prevEmpleados.map(empleado => 
+            empleado.id_usuario === id_usuario 
+              ? { ...empleado, estado: nuevoEstado }
+              : empleado
           )
         );
 
         alert(`Empleado ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'} exitosamente`);
       }
     } catch (error) {
-      console.error("Error al cambiar estado del Empleado:", error.response?.data || error.message);
-      alert(`Error al cambiar estado del Empleado: ${error.response?.data?.mensaje || error.message}`);
-      // Refrescamos los datos en caso de error para asegurar consistencia
+      console.error("Error al cambiar estado del empleado:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      const errorMsg = error.response?.data?.mensaje || 
+                      error.response?.data?.message || 
+                      error.message || 
+                      "Error desconocido";
+      
+      alert(`Error al cambiar estado: ${errorMsg}`);
+      
       await fetchEmpleados();
-    }
-  };
-  const fetchTiposDoc = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/tipo_doc`);
-      setTiposDoc(response.data.tipo_docs || response.data);
-    } catch (error) {
-      console.error("Error al obtener los tipos de documento:", error);
     }
   };
 
@@ -194,12 +211,16 @@ const AdminEmpleados = () => {
       <Menu />
       <div className="content-container">
         <h1>Empleados Registrados</h1>
-        
-        <Button variant="primary" className="mb-3" onClick={handleAddEmployee}>
+        <SearchComponent 
+          data={empleados}
+          setFilteredData={setFilteredData}
+          searchFields={['nombres', 'apellidos', 'num_documento', 'estado', 'id_usuario', 'email']}
+        />
+        <Button className="crud-btn crud-btn-primary mb-3" onClick={handleAddEmployee}>
           Agregar Empleado
         </Button>
 
-        <Table striped bordered hover responsive>
+        <Table className="crud-table" striped bordered hover responsive>
           <thead>
             <tr>
               <th>ID</th>
@@ -215,48 +236,54 @@ const AdminEmpleados = () => {
             </tr>
           </thead>
           <tbody>
-            {empleados.length > 0 ? (
-              empleados.map((empleado) => (
-                <tr key={empleado.id_usuario}>
-                  <td>{empleado.id_usuario}</td>
-                  <td>{empleado.nombres}</td>
-                  <td>{empleado.apellidos}</td>
-                  <td>{empleado.telefono}</td>
-                  <td>{empleado.email}</td>
-                  <td>{empleado.tipo_doc_nombre}</td>
-                  <td>{empleado.num_documento}</td>
-                  <td>{empleado.direccion}</td>
-                  <td className={empleado.estado === 'Activo' ? 'text-success' : 'text-danger'}>
-                    {empleado.estado}
-                  </td>
-                  <td>
-                    <Button 
-                      variant="warning" 
-                      className="me-2" 
-                      onClick={() => handleEditEmployee(empleado)}
-                    >
-                      Editar
-                    </Button>
-                    <Button 
-                      variant={empleado.estado === 'Activo' ? 'danger' : 'success'}
-                      onClick={() => toggleEmpleadosEstado(empleado.id_usuario, empleado.estado)}
-                      disabled={empleado.estado === undefined}
-                    >
-                      {empleado.estado === 'Activo' ? 'Desactivar' : 'Activar'}
-                    </Button>
-                    
-                  </td>
-                </tr>
-              ))
+            {filteredData.length > 0 ? (
+              filteredData
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((empleado) => (
+                  <tr key={empleado.id_usuario}>
+                    <td>{empleado.id_usuario}</td>
+                    <td>{empleado.nombres}</td>
+                    <td>{empleado.apellidos}</td>
+                    <td>{empleado.telefono}</td>
+                    <td>{empleado.email}</td>
+                    <td>{empleado.tipo_doc_nombre}</td>
+                    <td>{empleado.num_documento}</td>
+                    <td>{empleado.direccion}</td>
+                    <td className={empleado.estado === 'Activo' ? 'text-success' : 'text-danger'}>
+                      {empleado.estado}
+                    </td>
+                    <td>
+                      <Button 
+                        className="crud-btn crud-btn-warning me-2" 
+                        onClick={() => handleEditEmployee(empleado)}
+                      >
+                        Editar
+                      </Button>
+                      <Button 
+                        className={`crud-btn ${empleado.estado === 'Activo' ? 'crud-btn-danger' : 'crud-btn-success'}`}
+                        onClick={() => toggleEmpleadosEstado(empleado.id_usuario, empleado.estado)}
+                      >
+                        {empleado.estado === 'Activo' ? 'Desactivar' : 'Activar'}
+                      </Button>
+                    </td>
+                  </tr>
+                ))
             ) : (
               <tr>
-                <td colSpan="9" className="text-center">No hay empleados disponibles.</td>
+                <td colSpan="10" className="text-center">No hay empleados disponibles.</td>
               </tr>
             )}
           </tbody>
         </Table>
 
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <PaginationComponent 
+          data={filteredData}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+
+        <Modal show={showModal} onHide={() => setShowModal(false)} className="modal-override categoria-modal">
           <Modal.Header closeButton>
             <Modal.Title>{isNewEmployee ? 'Agregar Empleado' : 'Editar Empleado'}</Modal.Title>
           </Modal.Header>
@@ -269,8 +296,14 @@ const AdminEmpleados = () => {
                   name="nombres"
                   value={editEmployee.nombres}
                   onChange={handleInputChange}
+                  placeholder="Ingrese su nombre"
+                  pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,}$"
+                  title="Solo letras y espacios. Mínimo 2 caracteres."
                   required
                 />
+                <Form.Text className="text-muted">
+                  Solo letras, mínimo 2 caracteres.
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3">
@@ -280,8 +313,14 @@ const AdminEmpleados = () => {
                   name="apellidos"
                   value={editEmployee.apellidos}
                   onChange={handleInputChange}
+                  placeholder="Ingrese sus apellidos"
+                  pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,}$"
+                  title="Solo letras y espacios. Mínimo 2 caracteres."
                   required
                 />
+                <Form.Text className="text-muted">
+                  Solo letras, mínimo 2 caracteres.
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="formTelefono">
@@ -291,8 +330,15 @@ const AdminEmpleados = () => {
                   name="telefono"
                   value={editEmployee.telefono}
                   onChange={handleInputChange}
+                  placeholder="Ingrese número de celular"
+                  pattern="^\d{10}$"
+                  title="Ingrese un número de 10 dígitos."
+                  maxLength={10}
                   required
                 />
+                <Form.Text className="text-muted">
+                  Ingrese un número de 10 dígitos.
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3">
@@ -302,8 +348,14 @@ const AdminEmpleados = () => {
                   name="email"
                   value={editEmployee.email}
                   onChange={handleInputChange}
+                  placeholder="user@ejemplo.com"
+                  pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                  title="Ingrese un correo válido (ej. user@dominio.com)."
                   required
                 />
+                <Form.Text className="text-muted">
+                  Ejemplo: user@ejemplo.com
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="formTipoDoc">
@@ -331,8 +383,14 @@ const AdminEmpleados = () => {
                   name="num_documento"
                   value={editEmployee.num_documento}
                   onChange={handleInputChange}
+                  placeholder="Ingrese número de documento"
+                  pattern="^\d{6,12}$"
+                  title="Ingrese entre 6 y 12 dígitos numéricos."
                   required
                 />
+                <Form.Text className="text-muted">
+                  Ingrese entre 6 y 12 dígitos numéricos.
+                </Form.Text>
               </Form.Group>
               )}
 
@@ -343,8 +401,14 @@ const AdminEmpleados = () => {
                   name="direccion"
                   value={editEmployee.direccion}
                   onChange={handleInputChange}
+                  placeholder="Ingrese dirección"
+                  pattern="^[A-Za-z0-9#\-\s,.°]{5,}$"
+                  title="Ingrese una dirección válida (mínimo 5 caracteres)."
                   required
                 />
+                <Form.Text className="text-muted">
+                  Dirección válida, mínimo 5 caracteres.
+                </Form.Text>
               </Form.Group>
 
               {isNewEmployee && (
@@ -355,8 +419,14 @@ const AdminEmpleados = () => {
                     name="contrasena"
                     value={editEmployee.contrasena}
                     onChange={handleInputChange}
+                    placeholder="Ingrese contraseña"
+                    pattern="^(?=.*[A-Z])(?=(?:.*[a-z]){5,})(?=.*\d)(?=.*[^A-Za-z0-9]).{8,10}$"
+                    title="Debe tener 1 mayúscula, al menos 5 minúsculas, 1 número, 1 símbolo, entre 8 y 10 caracteres."
                     required
                   />
+                  <Form.Text className="text-muted">
+                    8-10 caracteres, con mayúsculas, minúsculas, número y símbolo.
+                  </Form.Text>
                 </Form.Group>
               )}
 

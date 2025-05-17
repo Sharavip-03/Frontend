@@ -9,8 +9,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import "./reportes.css";
-
-const apiUrl = "http://localhost:5000";
+import API_BASE_URL from '../../config/apiConfig';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -25,7 +24,7 @@ const ProductosReport = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${apiUrl}/api/reportes/productos`);
+        const response = await axios.get(`${API_BASE_URL}/api/reportes/productos`);
         setData(response.data);
       } catch (error) {
         console.error("Error fetching products data:", error);

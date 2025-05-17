@@ -13,6 +13,7 @@ import {
   StarBorder
 } from '@mui/icons-material';
 import './detallesProducto.css';
+import API_BASE_URL from '../../../config/apiConfig';
 
 const DetallesProducto = () => {
     const { id } = useParams();
@@ -23,9 +24,7 @@ const DetallesProducto = () => {
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [cantidad, setCantidad] = useState(1);
     const [showZoomModal, setShowZoomModal] = useState(false);
-    const [rating, setRating] = useState(4.5);
 
-    const urlAPI = 'http://127.0.0.1:5000';
 
     useEffect(() => {
         const fetchData = async () => {
@@ -33,8 +32,8 @@ const DetallesProducto = () => {
                 setLoading(true);
                 
                 const [productResponse, discountsResponse] = await Promise.all([
-                    axios.get(`${urlAPI}/PrivProd/${id}`),
-                    axios.get(`${urlAPI}/descuentosProd`)
+                    axios.get(`${API_BASE_URL}/PrivProd/${id}`),
+                    axios.get(`${API_BASE_URL}/descuentosProd`)
                 ]);
                 
                 const productData = productResponse.data.producto;
@@ -59,7 +58,7 @@ const DetallesProducto = () => {
                 productData.estado = productData.stock > 0 ? 'Disponible' : 'Agotado';
                 setProducto(productData);
                 
-                const allProductsResponse = await axios.get(`${urlAPI}/PrivProd`);
+                const allProductsResponse = await axios.get(`${API_BASE_URL}/PrivProd`);
                 const allProducts = allProductsResponse.data?.productos || [];
                 setRelatedProducts(
                     allProducts.filter(p => 
@@ -87,7 +86,7 @@ const DetallesProducto = () => {
                 return;
             }
 
-            await axios.post(`${urlAPI}/Carrito/agregar`, {
+            await axios.post(`${API_BASE_URL}/Carrito/agregar`, {
                 id_usuario: localStorage.getItem('id'),
                 id_producto: producto.id_producto,
                 cantidad: cantidad

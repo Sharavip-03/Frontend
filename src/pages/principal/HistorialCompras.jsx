@@ -18,6 +18,7 @@ import {
   LocalAtm
 } from '@mui/icons-material';
 import './HistorialCompras.css';
+import API_BASE_URL from '../../config/apiConfig';
 
 const HistorialCompras = () => {
   const [compras, setCompras] = useState([]);
@@ -29,7 +30,7 @@ const HistorialCompras = () => {
     const cargarHistorial = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:5000/api/compras/historial', {
+        const response = await axios.get(`${API_BASE_URL}/api/compras/historial`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -77,7 +78,7 @@ const HistorialCompras = () => {
     if (result.isConfirmed) {
       try {
         const token = localStorage.getItem('token');
-        await axios.post(`http://localhost:5000/api/pagos/cancelar/${idFactura}`, {}, {
+        await axios.post(`${API_BASE_URL}/api/pagos/cancelar/${idFactura}`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

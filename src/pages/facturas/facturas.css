@@ -17,6 +17,10 @@
     font-size: 0.9em;
     padding: 0.5em 0.75em;
 }
+code {
+    font-size: 0.8em;
+    word-break: break-all;
+  }
 
 .action-buttons {
     display: flex;

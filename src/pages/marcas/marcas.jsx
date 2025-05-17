@@ -3,13 +3,18 @@ import './marcas.css';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
 import Menu from '../../components/AdminNavbar/admin';
+import API_BASE_URL from '../../config/apiConfig';
+import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
+import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
 
-const apiUrl = 'http://localhost:5000';
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
 
 const AdminMarcas = () => {
   const [marcas, setMarcas] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [proveedores, setProveedores] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isNewMarca, setIsNewMarca] = useState(false);
@@ -26,10 +31,17 @@ const AdminMarcas = () => {
     fetchProveedores();
   }, []);
 
+  useEffect(() => {
+    setFilteredData(marcas);
+  }, [marcas]);
+
   const fetchMarcas = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/PrivMarcas`);
-      setMarcas(response.data.marcas || []);
+      const response = await axios.get(`${API_BASE_URL}/PrivMarcas`);
+      setMarcas(response.data.marcas.map(m => ({
+        ...m,
+        estado: m.estado || 'Activo'
+      })) || []);
     } catch (error) {
       console.error("Error al obtener las marcas:", error);
     }
@@ -37,10 +49,35 @@ const AdminMarcas = () => {
 
   const fetchProveedores = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/adminProveedor`);
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        console.error("No se encontró token en localStorage");
+        return;
+      }
+  
+      const response = await axios.get(`${API_BASE_URL}/adminProveedor`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
       setProveedores(response.data.proveedores || []);
     } catch (error) {
-      console.error("Error al obtener los proveedores:", error);
+      console.error("Error al obtener los proveedores:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      if (error.response?.status === 401) {
+        alert("Tu sesión ha expirado. Por favor inicia sesión nuevamente.");
+      } else {
+        alert("Error al cargar proveedores. Por favor intenta nuevamente.");
+      }
+      
+      setProveedores([]);
     }
   };
 
@@ -99,13 +136,13 @@ const AdminMarcas = () => {
       }
 
       if (isNewMarca) {
-        await axios.post(`${apiUrl}/PrivMarcas`, formData, {
+        await axios.post(`${API_BASE_URL}/PrivMarcas`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
       } else {
-        await axios.put(`${apiUrl}/PrivMarca/${editMarca.id_marca}`, formData, {
+        await axios.put(`${API_BASE_URL}/PrivMarca/${editMarca.id_marca}`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -119,13 +156,31 @@ const AdminMarcas = () => {
     }
   };
 
-  const handleStatusChange = async (id_marca, nuevoEstado) => {
+  const handleStatusChange = async (id_marca, estadoActual) => {
+    if (!window.confirm(`¿Estás seguro que deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} esta marca?`)) {
+      return;
+    }
+
     try {
-      await axios.patch(`${apiUrl}/PrivMarca/${id_marca}`, { estado: nuevoEstado });
-      fetchMarcas();
+      const token = localStorage.getItem("token");
+      const nuevoEstado = estadoActual === 'Activo' ? 'Inactivo' : 'Activo';
+      await axios.patch(`${API_BASE_URL}/PrivMarca/${id_marca}`, { estado: nuevoEstado }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setMarcas(prevMarcas => 
+        prevMarcas.map(marca => 
+          marca.id_marca === id_marca 
+            ? { ...marca, estado: nuevoEstado }
+            : marca
+        )
+      );
+      
+      alert(`Marca ${nuevoEstado === 'Activo' ? 'activada' : 'desactivada'} exitosamente`);
     } catch (error) {
       console.error("Error al cambiar el estado:", error);
       alert("Error al cambiar el estado");
+      fetchMarcas();
     }
   };
 
@@ -134,10 +189,15 @@ const AdminMarcas = () => {
       <Menu />
       <div className="content-container">
         <h1>Marcas Registradas</h1>
-        <Button variant="primary" className="mb-3" onClick={handleAddMarca}>
+        <SearchComponent 
+          data={marcas}
+          setFilteredData={setFilteredData}
+          searchFields={['nombre', 'estado', 'id_marca', 'proveedor']}
+        />
+        <Button className="crud-btn crud-btn-primary mb-3" onClick={handleAddMarca}>
           Agregar Marca
         </Button>
-        <Table striped bordered hover responsive>
+        <Table className="crud-table" striped bordered hover responsive>
           <thead>
             <tr>
               <th>ID</th>
@@ -149,35 +209,42 @@ const AdminMarcas = () => {
             </tr>
           </thead>
           <tbody>
-            {marcas.length > 0 ? (
-              marcas.map((marca) => (
-                <tr key={marca.id_marca}>
-                  <td>{marca.id_marca}</td>
-                  <td>{marca.nombre}</td>
-                  <td>
-                    {proveedores.find(p => p.id_proveedor === marca.id_proveedor)?.nombre || 'Desconocido'}
-                  </td>
-                  <td>{marca.estado}</td>
-                  <td>
-                    <img
-                      src={marca.imagen || 'https://via.placeholder.com/100'}
-                      alt={marca.nombre}
-                      style={{ width: "100px", height: "auto" }}
-                    />
-                  </td>
-                  <td>
-                    <Button variant="warning" className="me-2" onClick={() => handleEditMarca(marca)}>
-                      Editar
-                    </Button>
-                    <Button 
-                      variant={marca.estado === 'Activo' ? 'danger' : 'success'}
-                      onClick={() => handleStatusChange(marca.id_marca, marca.estado === 'Activo' ? 'Inactivo' : 'Activo')}
-                    >
-                      {marca.estado === 'Activo' ? 'Desactivar' : 'Activar'}
-                    </Button>
-                  </td>
-                </tr>
-              ))
+            {filteredData.length > 0 ? (
+              filteredData
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((marca) => (
+                  <tr key={marca.id_marca}>
+                    <td>{marca.id_marca}</td>
+                    <td>{marca.nombre}</td>
+                    <td>
+                      {proveedores.find(p => p.id_proveedor === marca.id_proveedor)?.nombre || 'Desconocido'}
+                    </td>
+                    <td className={marca.estado === 'Activo' ? 'text-success' : 'text-danger'}>
+                      {marca.estado}
+                    </td>
+                    <td>
+                      <img
+                        src={marca.imagen || 'https://via.placeholder.com/100'}
+                        alt={marca.nombre}
+                        style={{ width: "100px", height: "auto" }}
+                      />
+                    </td>
+                    <td>
+                      <Button 
+                        className="crud-btn crud-btn-warning me-2" 
+                        onClick={() => handleEditMarca(marca)}
+                      >
+                        Editar
+                      </Button>
+                      <Button 
+                        className={`crud-btn ${marca.estado === 'Activo' ? 'crud-btn-danger' : 'crud-btn-success'}`}
+                        onClick={() => handleStatusChange(marca.id_marca, marca.estado)}
+                      >
+                        {marca.estado === 'Activo' ? 'Desactivar' : 'Activar'}
+                      </Button>
+                    </td>
+                  </tr>
+                ))
             ) : (
               <tr>
                 <td colSpan="6" className="text-center">No hay marcas disponibles.</td>
@@ -186,7 +253,14 @@ const AdminMarcas = () => {
           </tbody>
         </Table>
 
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <PaginationComponent 
+          data={filteredData}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+
+        <Modal show={showModal} onHide={() => setShowModal(false)} className="modal-override categoria-modal">
           <Modal.Header closeButton>
             <Modal.Title>{isNewMarca ? 'Agregar Marca' : 'Editar Marca'}</Modal.Title>
           </Modal.Header>

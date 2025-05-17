@@ -3,13 +3,18 @@ import './cate.css';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
 import Menu from '../../components/AdminNavbar/admin';
+import API_BASE_URL from '../../config/apiConfig';
+import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
+import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
 
-const apiUrl = 'http://localhost:5000';
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
 
 const AdminCategorias = () => {
   const [categorias, setCategorias] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [showModal, setShowModal] = useState(false);
   const [isNewCategoria, setIsNewCategoria] = useState(false);
   const [editCategoria, setEditCategoria] = useState({
@@ -23,9 +28,14 @@ const AdminCategorias = () => {
     fetchCategorias();
   }, []);
 
+    useEffect(() => {
+      setFilteredData(categorias);
+    }, [categorias]);
+  
+
   const fetchCategorias = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/categoria`);
+      const response = await axios.get(`${API_BASE_URL}/categoria`);
       setCategorias(response.data.categorias || []);
     } catch (error) {
       console.error("Error al obtener las categorías:", error);
@@ -74,10 +84,15 @@ const AdminCategorias = () => {
       <Menu />
       <div className="content-container">
         <h1>Categorías Registradas</h1>
+                <SearchComponent 
+                  data={categorias}
+                  setFilteredData={setFilteredData}
+                  searchFields={['nombre', 'estado', 'id_categoria', 'descripcion']}
+                />
         <Button className="mb-3" onClick={handleAddCategoria}>
           Agregar Categoría
         </Button>
-        <Table striped bordered hover responsive>
+        <Table className="crud-table" striped bordered hover responsive>
           <thead>
             <tr>
               <th>ID</th>
@@ -88,8 +103,10 @@ const AdminCategorias = () => {
             </tr>
           </thead>
           <tbody>
-            {categorias.length > 0 ? (
-              categorias.map((categoria) => (
+          {filteredData.length > 0 ? (
+              filteredData
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((categoria) => (
                 <tr key={categoria.id_categoria}>
                   <td>{categoria.id_categoria}</td>
                   <td>{categoria.nombre}</td>
@@ -102,7 +119,7 @@ const AdminCategorias = () => {
                     />
                   </td>
                   <td>
-                    <Button variant="warning" className="me-2" onClick={() => handleEditCategoria(categoria)}>
+                    <Button className="crud-btn crud-btn-warning" onClick={() => handleEditCategoria(categoria)}>
                       Editar
                     </Button>
                   </td>
@@ -116,7 +133,14 @@ const AdminCategorias = () => {
           </tbody>
         </Table>
 
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <PaginationComponent 
+          data={filteredData}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+
+        <Modal show={showModal} onHide={() => setShowModal(false)} className="modal-override categoria-modal"> 
           <Modal.Header closeButton>
             <Modal.Title>{isNewCategoria ? 'Agregar Categoría' : 'Editar Categoría'}</Modal.Title>
           </Modal.Header>

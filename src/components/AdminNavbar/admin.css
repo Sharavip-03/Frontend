@@ -125,52 +125,41 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Estilos para pantallas grandes (se mantiene el diseño actual) */
+/* Contenedor principal */
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Sidebar fijo */
 .sidebar {
   width: 250px;
-  height: 100vh;
+  min-height: 100vh;
   background-color: #ff914d;
   display: flex;
   flex-direction: column;
-  align-items: center;
   padding: 20px;
-  flex-shrink: 0;
-  transition: transform 0.3s ease-in-out;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  overflow-y: auto; /* Scroll vertical si es necesario */
 }
 
 /* Estilos para pantallas pequeñas */
 @media (max-width: 768px) {
   .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 250px;
-    height: 100vh;
     transform: translateX(-100%);
-    background-color: #ff914d;
     transition: transform 0.3s ease-in-out;
-    z-index: 1000;
   }
 
   .sidebar.open {
     transform: translateX(0);
   }
 
-  .menu-button {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    background-color: #ff914d;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    font-size: 18px;
-    cursor: pointer;
-    z-index: 1100;
-    border-radius: 5px;
-  }
-
-  .inventario {
-    padding-top: 50px;
+  .content-container {
+    margin-left: 0;
+    width: 100%;
   }
 }
+

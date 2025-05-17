@@ -1,19 +1,215 @@
-.admin-container {
-    display: flex;
-    height: 100vh;
+/* ====================== */
+/* ESTILOS BASE PARA TODOS LOS MODALS */
+/* ====================== */
+
+.modal-override {
+  /* Estructura base */
+  z-index: 1060;
+  margin: 0 auto;
+}
+/* En tu archivo CSS */
+.categoria-modal .form-group {
+  margin-bottom: 1rem;
+}
+
+.categoria-modal .form-control {
+  width: 100%;
+  padding: 0.5rem;
+}
+
+.modal-override .modal-dialog {
+  display: flex;
+  align-items: center;
+  min-height: calc(100% - 1rem);
+  margin: 1.75rem auto;
+  max-width: 650px;
+}
+
+.modal-override .modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.modal-override .modal-header {
+  background-color: #FF8357;
+  color: white;
+  border-bottom: none;
+  padding: 20px;
+  position: relative;
+}
+
+.modal-override .modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 auto;
+  text-align: center;
+  width: calc(100% - 40px);
+}
+
+.modal-override .close {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 1;
+}
+
+.modal-override .modal-body {
+  padding: 25px;
+  background-color: #fff;
+}
+
+/* ====================== */
+/* ESTILOS PARA CONTENIDO DE MODALS (FORMULARIOS) */
+/* ====================== */
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-form-row {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+}
+
+.modal-form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.modal-form-input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+.modal-form-input:focus {
+  outline: none;
+  border-color: #FF8357;
+  box-shadow: 0 0 0 2px rgba(255, 131, 87, 0.2);
+  background-color: #fff;
+}
+
+.modal-form-input.is-invalid {
+  border-color: #dc3545;
+}
+
+.modal-form-input.is-invalid:focus {
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+}
+
+.modal-form-error {
+  color: #dc3545;
+  font-size: 0.85rem;
+  margin-top: 5px;
+  height: 18px;
+}
+
+.modal-form-submit {
+  background-color: #FF8357;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.modal-form-submit:hover {
+  background-color: #e66a3d;
+  transform: translateY(-2px);
+}
+
+.modal-form-submit:active {
+  transform: translateY(0);
+}
+
+.modal-form-footer {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.modal-form-text {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.modal-form-link {
+  background: none;
+  border: none;
+  color: #FF8357;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0;
+  text-decoration: underline;
+  font-size: 0.95rem;
+}
+
+.modal-form-link:hover {
+  color: #e66a3d;
+}
+
+/* ====================== */
+/* ESTILOS RESPONSIVOS */
+/* ====================== */
+
+@media (max-width: 768px) {
+  .modal-override .modal-dialog {
+    max-width: 95%;
+    margin: 1rem auto;
   }
   
-  .content-container {
-    flex-grow: 1;
+  .modal-form-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .modal-override .modal-body {
     padding: 20px;
-    overflow: auto;
+  }
+}
+
+@media (max-width: 576px) {
+  .modal-override .modal-header,
+  .modal-override .modal-body {
+    padding: 15px;
   }
   
-  .text-success {
-    color: green;
+  .modal-override .modal-title {
+    font-size: 1.3rem;
   }
   
-  .text-danger {
-    color: red;
+  .modal-form-input {
+    padding: 10px 12px;
   }
-  
+}
+

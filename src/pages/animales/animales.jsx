@@ -3,13 +3,18 @@ import './animales.css';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
 import Menu from '../../components/AdminNavbar/admin';
+import API_BASE_URL from '../../config/apiConfig';
+import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
+import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
 
-const apiUrl = 'http://localhost:5000';
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
 
 const AdminAnimales = () => {
   const [animales, setAnimales] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [showModal, setShowModal] = useState(false);
   const [isNewAnimal, setIsNewAnimal] = useState(false);
   const [editAnimal, setEditAnimal] = useState({
@@ -23,12 +28,20 @@ const AdminAnimales = () => {
     fetchAnimales();
   }, []);
 
+  useEffect(() => {
+    setFilteredData(animales);
+  }, [animales]);
+
   const fetchAnimales = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/animalesProd`);
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${API_BASE_URL}/animalesProd`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setAnimales(response.data.animales || []);
     } catch (error) {
       console.error("Error al obtener los animales:", error);
+      alert("Error al cargar animales. Por favor intente nuevamente.");
     }
   };
 
@@ -77,6 +90,7 @@ const AdminAnimales = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append('nombre', editAnimal.nombre);
       formData.append('estado', editAnimal.estado);
@@ -85,33 +99,58 @@ const AdminAnimales = () => {
       }
 
       if (isNewAnimal) {
-        await axios.post(`${apiUrl}/animalesProd`, formData, {
+        await axios.post(`${API_BASE_URL}/animalesProd`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
           },
         });
+        alert('Animal creado exitosamente');
       } else {
-        await axios.put(`${apiUrl}/animalesProd/${editAnimal.id_animal}`, formData, {
+        await axios.put(`${API_BASE_URL}/animalesProd/${editAnimal.id_animal}`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
           },
         });
+        alert('Animal actualizado exitosamente');
       }
       setShowModal(false);
       fetchAnimales();
     } catch (error) {
       console.error("Error al guardar el animal:", error);
-      alert("Error al guardar el animal");
+      alert(`Error al ${isNewAnimal ? 'crear' : 'actualizar'} animal: ${error.response?.data?.mensaje || error.message}`);
     }
   };
 
-  const handleStatusChange = async (id_animal, nuevoEstado) => {
+  const handleStatusChange = async (id_animal, estadoActual) => {
+    if (!window.confirm(`¿Estás seguro que deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} este animal?`)) {
+      return;
+    }
+
     try {
-      await axios.patch(`${apiUrl}/animalesProd/${id_animal}`, { estado: nuevoEstado });
-      fetchAnimales();
+      const token = localStorage.getItem("token");
+      const nuevoEstado = estadoActual === 'Activo' ? 'Inactivo' : 'Activo';
+
+      await axios.patch(
+        `${API_BASE_URL}/animalesProd/${id_animal}`, 
+        { estado: nuevoEstado }, 
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+
+      setAnimales(prevAnimales => 
+        prevAnimales.map(animal => 
+          animal.id_animal === id_animal 
+            ? { ...animal, estado: nuevoEstado }
+            : animal
+        )
+      );
+
+      alert(`Animal ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'} exitosamente`);
     } catch (error) {
       console.error("Error al cambiar el estado:", error);
-      alert("Error al cambiar el estado");
+      alert(`Error al cambiar estado: ${error.response?.data?.mensaje || error.message}`);
+      fetchAnimales();
     }
   };
 
@@ -120,10 +159,15 @@ const AdminAnimales = () => {
       <Menu />
       <div className="content-container">
         <h1>Animales Registrados</h1>
-        <Button variant="primary" className="mb-3" onClick={handleAddAnimal}>
-          Agregar Animal
+        <SearchComponent 
+          data={animales}
+          setFilteredData={setFilteredData}
+          searchFields={['nombre', 'estado', 'id_animal']}
+        />
+        <Button className="crud-btn crud-btn-primary mb-3" onClick={handleAddAnimal}>
+          <i className="bi bi-plus-circle"></i> Agregar Animal
         </Button>
-        <Table striped bordered hover responsive>
+        <Table className="crud-table" striped bordered hover responsive>
           <thead>
             <tr>
               <th>ID</th>
@@ -134,32 +178,39 @@ const AdminAnimales = () => {
             </tr>
           </thead>
           <tbody>
-            {animales.length > 0 ? (
-              animales.map((animal) => (
-                <tr key={animal.id_animal}>
-                  <td>{animal.id_animal}</td>
-                  <td>{animal.nombre}</td>
-                  <td>{animal.estado || 'Activo'}</td>
-                  <td>
-                    <img
-                      src={animal.imagen || 'https://via.placeholder.com/100'}
-                      alt={animal.nombre}
-                      style={{ width: "100px", height: "auto" }}
-                    />
-                  </td>
-                  <td>
-                    <Button variant="warning" className="me-2" onClick={() => handleEditAnimal(animal)}>
-                      Editar
-                    </Button>
-                    <Button 
-                      variant={animal.estado === 'Activo' ? 'danger' : 'success'}
-                      onClick={() => handleStatusChange(animal.id_animal, animal.estado === 'Activo' ? 'Inactivo' : 'Activo')}
-                    >
-                      {animal.estado === 'Activo' ? 'Desactivar' : 'Activar'}
-                    </Button>
-                  </td>
-                </tr>
-              ))
+            {filteredData.length > 0 ? (
+              filteredData
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((animal) => (
+                  <tr key={animal.id_animal}>
+                    <td>{animal.id_animal}</td>
+                    <td>{animal.nombre}</td>
+                    <td className={animal.estado === 'Activo' ? 'text-success' : 'text-danger'}>
+                      {animal.estado}
+                    </td>
+                    <td>
+                      <img
+                        src={animal.imagen || 'https://via.placeholder.com/100'}
+                        alt={animal.nombre}
+                        style={{ width: "100px", height: "auto" }}
+                      />
+                    </td>
+                    <td>
+                      <Button 
+                        className="crud-btn crud-btn-warning me-2" 
+                        onClick={() => handleEditAnimal(animal)}
+                      >
+                        <i className="bi bi-pencil"></i> Editar
+                      </Button>
+                      <Button 
+                        className={`crud-btn ${animal.estado === 'Activo' ? 'crud-btn-danger' : 'crud-btn-success'}`}
+                        onClick={() => handleStatusChange(animal.id_animal, animal.estado)}
+                      >
+                        <i className="bi bi-power"></i> {animal.estado === 'Activo' ? 'Desactivar' : 'Activar'}
+                      </Button>
+                    </td>
+                  </tr>
+                ))
             ) : (
               <tr>
                 <td colSpan="5" className="text-center">No hay animales disponibles.</td>
@@ -168,7 +219,14 @@ const AdminAnimales = () => {
           </tbody>
         </Table>
 
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <PaginationComponent 
+          data={filteredData}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+
+        <Modal show={showModal} onHide={() => setShowModal(false)} className="modal-override categoria-modal">
           <Modal.Header closeButton>
             <Modal.Title>{isNewAnimal ? 'Agregar Animal' : 'Editar Animal'}</Modal.Title>
           </Modal.Header>
@@ -205,12 +263,14 @@ const AdminAnimales = () => {
                   </div>
                 )}
               </Form.Group>
-              <Button variant="secondary" onClick={() => setShowModal(false)} className="me-2">
-                Cancelar
-              </Button>
-              <Button variant="primary" type="submit">
-                {isNewAnimal ? 'Crear Animal' : 'Guardar Cambios'}
-              </Button>
+              <div className="d-flex justify-content-end">
+                <Button variant="secondary" onClick={() => setShowModal(false)} className="me-2">
+                  Cancelar
+                </Button>
+                <Button variant="primary" type="submit">
+                  {isNewAnimal ? 'Crear Animal' : 'Guardar Cambios'}
+                </Button>
+              </div>
             </Form>
           </Modal.Body>
         </Modal>

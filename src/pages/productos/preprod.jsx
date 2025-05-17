@@ -3,8 +3,7 @@ import { Card, Button, Container, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Menu from '../../components/AdminNavbar/admin';
-
-const apiUrl = 'http://localhost:5000';
+import API_BASE_URL from '../../config/apiConfig';
 
 const PreaccesoProductos = () => {
   const [animales, setAnimales] = useState([]);
@@ -16,7 +15,7 @@ const PreaccesoProductos = () => {
 
   const fetchAnimales = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/animalesProd`);
+      const response = await axios.get(`${API_BASE_URL}/animalesProd`);
       setAnimales(response.data.animales || []);
     } catch (error) {
       console.error("Error al obtener los animales:", error);

@@ -9,8 +9,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import axios from "axios";
 import "./reportes.css";
-
-const apiUrl = "http://localhost:5000";
+import API_BASE_URL from '../../config/apiConfig';
 
 const VentasReport = () => {
   const [data, setData] = useState([]);
@@ -22,7 +21,7 @@ const VentasReport = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${apiUrl}/api/reportes/ventas`, {
+        const response = await axios.get(`${API_BASE_URL}/api/reportes/ventas`, {
           params: {
             start: startDate.toISOString().split("T")[0],
             end: endDate.toISOString().split("T")[0]

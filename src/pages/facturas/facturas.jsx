@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
 import axios from 'axios';
 import Menu from '../../components/AdminNavbar/admin';
-
-const apiUrl = 'http://localhost:5000';
+import API_BASE_URL from '../../config/apiConfig';
+import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
+import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
 
 const AdminFacturas = () => {
   const [facturas, setFacturas] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [showModal, setShowModal] = useState(false);
   const [editFactura, setEditFactura] = useState({
     id_factura: '',
@@ -22,22 +26,32 @@ const AdminFacturas = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setFilteredData(facturas);
+  }, [facturas]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
         
-        // Obtener facturas con datos expandidos del cliente
-        const facturasResponse = await axios.get(`${apiUrl}/PrivFactura?expand=cliente`, {
+        const facturasResponse = await axios.get(`${API_BASE_URL}/PrivFactura?expand=cliente,pago`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        // Obtener clientes por separado
-        const clientesResponse = await axios.get(`${apiUrl}/Priv`, {
+        const facturasConPago = facturasResponse.data.facturas.map(f => ({
+          ...f,
+          metodo_pago: f.metodo_pago || f.formulario_pago?.tipo_pago || (f.estado === 'Pagada' ? 'Efectivo' : 'N/A'),
+          referencia_pago: f.referencia_pago || f.formulario_pago?.referencia_pago || 
+                          (f.estado === 'Pagada' ? 'Sin referencia' : 'N/A')
+        }));
+        
+        setFacturas(facturasConPago || []);
+        
+        const clientesResponse = await axios.get(`${API_BASE_URL}/Priv`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        setFacturas(facturasResponse.data.facturas || []);
         setClientes(clientesResponse.data.usuarios || []);
         setError(null);
       } catch (err) {
@@ -56,24 +70,18 @@ const AdminFacturas = () => {
   const fetchFacturas = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${apiUrl}/PrivFactura`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await axios.get(`${API_BASE_URL}/PrivFactura?expand=cliente,pago`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      if (response.data && response.data.facturas) {
-        setFacturas(response.data.facturas);
-      } else {
-        console.error("Formato de respuesta inesperado:", response.data);
-        setFacturas([]);
-      }
+      setFacturas(response.data.facturas.map(f => ({
+        ...f,
+        metodo_pago: f.metodo_pago || f.formulario_pago?.tipo_pago || 'Efectivo',
+        referencia_pago: f.referencia_pago || f.formulario_pago?.referencia_pago
+      })));
     } catch (error) {
       console.error("Error al obtener las facturas:", error);
-      if (error.response) {
-        console.error("Detalles del error:", error.response.data);
-      }
-      setFacturas([]);
+      setError(error.response?.data?.message || "Error al cargar facturas");
     }
   };
 
@@ -82,7 +90,9 @@ const AdminFacturas = () => {
       ...factura,
       fecha_factura: factura.fecha_factura ? factura.fecha_factura.slice(0, 16) : '',
       fecha_vencimiento: factura.fecha_vencimiento ? factura.fecha_vencimiento.slice(0, 16) : '',
-      cliente: factura.cliente || clientes.find(c => c.id_usuario === factura.id_cliente)
+      cliente: factura.cliente || clientes.find(c => c.id_usuario === factura.id_cliente),
+      metodo_pago: factura.metodo_pago || factura.formulario_pago?.tipo_pago || 'Efectivo',
+      referencia_pago: factura.referencia_pago || factura.formulario_pago?.referencia_pago
     });
     setShowModal(true);
   };
@@ -95,26 +105,30 @@ const AdminFacturas = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      if (editFactura.metodo_pago && !editFactura.referencia_pago) {
+        throw new Error("Debe ingresar una referencia para el método de pago");
+      }
+      
       const token = localStorage.getItem('token');
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-
-      await axios.put(`${apiUrl}/PrivFactura/${editFactura.id_factura}`, editFactura, config);
+      await axios.put(`${API_BASE_URL}/PrivFactura/${editFactura.id_factura}`, editFactura, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
       setShowModal(false);
       fetchFacturas();
     } catch (error) {
-      console.error("Error al guardar la factura:", error);
-      setError(error.response?.data?.message || "Error al guardar la factura");
+      setError(error.response?.data?.message || error.message);
     }
   };
-  
+
   const handleCancelarFactura = async (id_factura) => {
+    if (!window.confirm('¿Estás seguro que deseas cancelar esta factura?')) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`${apiUrl}/PrivFactura/${id_factura}`, {}, {
+      await axios.patch(`${API_BASE_URL}/PrivFactura/${id_factura}`, {}, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -174,7 +188,12 @@ const AdminFacturas = () => {
       <Menu />
       <div className="content-container">
         <h1>Facturas Registradas</h1>
-        <Table striped bordered hover responsive>
+        <SearchComponent 
+          data={facturas}
+          setFilteredData={setFilteredData}
+          searchFields={['fecha', 'id_factura', 'Cliente', 'total', 'iva_total', 'estado', 'metodo_pago', 'referencia_pago', 'vencimiento']}
+        />
+        <Table className="crud-table" striped bordered hover responsive>
           <thead>
             <tr>
               <th>ID</th>
@@ -183,42 +202,61 @@ const AdminFacturas = () => {
               <th>Total</th>
               <th>IVA</th>
               <th>Estado</th>
+              <th>Método Pago</th>
+              <th>Referencia</th>
               <th>Vencimiento</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {facturas.length > 0 ? (
-              facturas.map((factura) => (
-                <tr key={factura.id_factura}>
-                  <td>{factura.id_factura}</td>
-                  <td>{factura.fecha_factura ? new Date(factura.fecha_factura).toLocaleString() : 'N/A'}</td>
-                  <td>{getClienteNombre(factura.id_cliente, factura)}</td>
-                  <td>${factura.total?.toLocaleString() || '0'}</td>
-                  <td>${factura.iva_total?.toLocaleString() || '0'}</td>
-                  <td>{getEstadoBadge(factura.estado)}</td>
-                  <td>{factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toLocaleDateString() : 'N/A'}</td>
-                  <td>
-                    <Button variant="warning" className="me-2" onClick={() => handleEditFactura(factura)}>
-                      Editar
-                    </Button>
-                    {factura.estado === 'Pendiente' && (
-                      <Button variant="danger" onClick={() => handleCancelarFactura(factura.id_factura)}>
-                        Cancelar
+            {filteredData.length > 0 ? (
+              filteredData
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((factura) => (
+                  <tr key={factura.id_factura}>
+                    <td>{factura.id_factura}</td>
+                    <td>{factura.fecha_factura ? new Date(factura.fecha_factura).toLocaleString() : 'N/A'}</td>
+                    <td>{getClienteNombre(factura.id_cliente, factura)}</td>
+                    <td>${factura.total?.toLocaleString() || '0'}</td>
+                    <td>${factura.iva_total?.toLocaleString() || '0'}</td>
+                    <td>{getEstadoBadge(factura.estado)}</td>
+                    <td>{factura.metodo_pago || 'N/A'}</td>
+                    <td>{factura.referencia_pago ? <small><code>{factura.referencia_pago}</code></small> : 'N/A'}</td>
+                    <td>{factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                      <Button 
+                        className="crud-btn crud-btn-warning me-2" 
+                        onClick={() => handleEditFactura(factura)}
+                      >
+                        Editar
                       </Button>
-                    )}
-                  </td>
-                </tr>
-              ))
+                      {factura.estado === 'Pendiente' && (
+                        <Button 
+                          className="crud-btn crud-btn-danger"
+                          onClick={() => handleCancelarFactura(factura.id_factura)}
+                        >
+                          Cancelar
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))
             ) : (
               <tr>
-                <td colSpan="8" className="text-center">No hay facturas disponibles.</td>
+                <td colSpan="10" className="text-center">No hay facturas disponibles.</td>
               </tr>
             )}
           </tbody>
         </Table>
 
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <PaginationComponent 
+          data={filteredData}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+
+        <Modal show={showModal} onHide={() => setShowModal(false)} className="modal-override categoria-modal">
           <Modal.Header closeButton>
             <Modal.Title>Editar Factura</Modal.Title>
           </Modal.Header>
@@ -295,6 +333,25 @@ const AdminFacturas = () => {
                   }
                   readOnly
                 />
+                <Form.Group className="mb-3">
+              <Form.Label>Método de Pago</Form.Label>
+              <Form.Control
+                type="text"
+                name="metodo_pago"
+                value={editFactura.metodo_pago || ''}
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Referencia de Pago</Form.Label>
+              <Form.Control
+                type="text"
+                name="referencia_pago"
+                value={editFactura.referencia_pago || ''}
+                onChange={handleInputChange}
+              />
+            </Form.Group>
                 <Form.Control
                   type="hidden"
                   name="id_cliente"

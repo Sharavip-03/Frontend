@@ -1,0 +1,228 @@
+/* ESTILOS ESPECÍFICOS PARA MODAL DE REGISTRO */
+.registro-modal {
+  margin: 0 auto; /* Centra el modal horizontalmente */
+}
+
+.registro-modal .modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+  border: none;
+  margin: 1.75rem auto; /* Añade margen vertical y centrado */
+}
+
+.registro-modal-header {
+  background-color: #FF8357;
+  color: white;
+  border-bottom: none;
+  padding: 20px;
+  position: relative;
+  display: flex;
+  justify-content: center; /* Centra el título */
+  align-items: center;
+}
+
+/* Asegura que el modal-dialog esté centrado */
+.modal-dialog {
+  display: flex;
+  align-items: center;
+  min-height: calc(100% - 1rem);
+  margin: 0 auto;
+}
+
+.registro-modal {
+  z-index: 1060; /* Bootstrap modal usa 1050 por defecto */
+}
+/* Para el modal-content */
+.modal-content {
+  width: 100%;
+  pointer-events: auto;
+}
+
+/* Elimina cualquier transformación que pueda estar afectando */
+.registro-modal {
+  transform: none !important;
+}
+.registro-modal-close {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+/* Asegurar que el modal esté centrado en todas las pantallas */
+.modal.show .modal-dialog {
+  display: flex;
+  align-items: center;
+  min-height: calc(100% - (1.75rem * 2));
+}
+
+/* Para el modal de login (si usa las mismas clases) */
+.registro-modal {
+  margin: 0 auto;
+}
+
+.registro-modal .modal-content {
+  margin: 1.75rem auto;
+}
+
+.registro-modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 auto;
+}
+
+.registro-modal-close {
+  right: 20px;
+  top: 20px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.registro-modal-body {
+  padding: 25px;
+  background-color: #fff;
+}
+
+.registro-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.registro-form-row {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+}
+
+.registro-form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.registro-form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.registro-form-input {
+  width: 90%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+.registro-form-input:focus {
+  outline: none;
+  border-color: #FF8357;
+  box-shadow: 0 0 0 2px rgba(255, 131, 87, 0.2);
+  background-color: #fff;
+}
+
+.registro-input-invalid {
+  border-color: #dc3545;
+}
+
+.registro-input-invalid:focus {
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+}
+
+.registro-form-error {
+  color: #dc3545;
+  font-size: 0.85rem;
+  margin-top: 5px;
+  height: 18px;
+}
+
+.registro-form-submit {
+  background-color: #FF8357;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.registro-form-submit:hover {
+  background-color: #e66a3d;
+  transform: translateY(-2px);
+}
+
+.registro-form-submit:active {
+  transform: translateY(0);
+}
+
+.registro-form-footer {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.registro-form-text {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.registro-form-link {
+  background: none;
+  border: none;
+  color: #FF8357;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0;
+  text-decoration: underline;
+  font-size: 0.95rem;
+}
+
+.registro-form-link:hover {
+  color: #e66a3d;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .registro-modal {
+    max-width: 95%;
+  }
+  
+  .registro-form-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .registro-modal-body {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  .registro-modal-header, 
+  .registro-modal-body {
+    padding: 15px;
+  }
+  
+  .registro-form-input {
+    padding: 10px 12px;
+  }
+}

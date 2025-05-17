@@ -4,10 +4,9 @@ import axios from "axios";
 import { Button, Alert, Modal, Form } from "react-bootstrap";
 import EditIcon from '@mui/icons-material/Edit';
 import "./Perfil.css";
+import API_BASE_URL from "../../config/apiConfig";
 
-const apiUrl = 'http://localhost:5000';
-
-const Perfil = () => {
+const Perfil = ({ onClose }) => {
   const [tiposDoc, setTiposDoc] = useState([]);
   const images = [
     "https://images.unsplash.com/photo-1591946614720-90a587da4a36?q=80&w=1887&auto=format&fit=crop",
@@ -43,7 +42,7 @@ const Perfil = () => {
 
   const fetchTiposDoc = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/tipo_doc`);
+      const response = await axios.get(`${API_BASE_URL}/tipo_doc`);
       setTiposDoc(response.data.tipo_docs || response.data);
     } catch (error) {
       console.error("Error al obtener los tipos de documento:", error);
@@ -65,7 +64,7 @@ const Perfil = () => {
     const cargarPerfil = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(`${apiUrl}/Priv/${usuarioId}`, {
+        const response = await axios.get(`${API_BASE_URL}/Priv/${usuarioId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -135,7 +134,7 @@ const Perfil = () => {
         delete userData.contrasena;
       }
 
-      const response = await axios.put(`${apiUrl}/Priv/${usuarioId}`, userData, {
+      const response = await axios.put(`${API_BASE_URL}/Priv/${usuarioId}`, userData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -165,6 +164,7 @@ const Perfil = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("id");
     localStorage.removeItem("isLogged");
+    if (onClose) onClose();
     navigate("/");
   };
 
@@ -314,6 +314,7 @@ const Perfil = () => {
                 name="telefono"
                 value={editUser.telefono}
                 onChange={handleEditChange}
+                required
               />
             </Form.Group>
             
@@ -324,6 +325,7 @@ const Perfil = () => {
                 name="direccion"
                 value={editUser.direccion}
                 onChange={handleEditChange}
+                required
               />
             </Form.Group>
             

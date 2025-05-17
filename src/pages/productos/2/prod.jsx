@@ -5,18 +5,21 @@ import Swal from 'sweetalert2';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Menu from '../../../components/AdminNavbar/admin';
 import { Badge } from 'react-bootstrap';
+import API_BASE_URL from '../../../config/apiConfig';
+import { SearchComponent } from '../../buscador/ParaCruds/SearchComponent';
+import { PaginationComponent } from '../../buscador/ParaCruds/PaginationComponent';
 
-
-const apiUrl = 'http://localhost:5000';
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
 
-axios.interceptors.request.use(config => {
-  if (config.url.startsWith(apiUrl)) {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+const api = axios.create({
+  baseURL: API_BASE_URL
+});
+
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 }, error => {
@@ -39,6 +42,9 @@ const AdminProductos = () => {
   const navigate = useNavigate();
   const [animal, setAnimal] = useState(null);
   const [productos, setProductos] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [categorias, setCategorias] = useState([]);
   const [marcas, setMarcas] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -65,10 +71,14 @@ const AdminProductos = () => {
     }
   }, [idAnimal, location.state?.idAnimalSeleccionado]);
 
+    useEffect(() => {
+      setFilteredData(productos);
+    }, [productos]);
+
   const fetchAnimal = async () => {
     try {
       const animalId = idAnimal || location.state?.idAnimalSeleccionado;
-      const response = await axios.get(`${apiUrl}/animalesProd/${animalId}`);
+      const response = await axios.get(`${API_BASE_URL}/animalesProd/${animalId}`);
       console.log("Respuesta del animal:", response.data); // Agrega esto
       setAnimal(response.data);
     } catch (error) {
@@ -77,7 +87,7 @@ const AdminProductos = () => {
   };
   const fetchProductos = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/PrivProd`);
+      const response = await axios.get(`${API_BASE_URL}/PrivProd`);
       const animalId = idAnimal || location.state?.idAnimalSeleccionado;
       
       // Filtrado seguro con conversión a número
@@ -99,7 +109,7 @@ const AdminProductos = () => {
 
   const fetchCategorias = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/categoria`);
+      const response = await axios.get(`${API_BASE_URL}/categoria`);
       setCategorias(response.data.categorias || []);
     } catch (error) {
       console.error("Error al obtener las categorías:", error);
@@ -108,7 +118,7 @@ const AdminProductos = () => {
 
   const fetchMarcas = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/PrivMarcas`);
+      const response = await axios.get(`${API_BASE_URL}/PrivMarcas`);
       setMarcas(response.data.marcas || []);
     } catch (error) {
       console.error("Error al obtener las marcas:", error);
@@ -182,9 +192,9 @@ const AdminProductos = () => {
       };
   
       if (isNewProducto) {
-        await axios.post(`${apiUrl}/PrivProd`, formData, config);
+        await axios.post(`${API_BASE_URL}/PrivProd`, formData, config);
       } else {
-        await axios.put(`${apiUrl}/PrivProd/${editProducto.id_producto}`, formData, config);
+        await axios.put(`${API_BASE_URL}/PrivProd/${editProducto.id_producto}`, formData, config);
       }
       
       setShowModal(false);
@@ -245,6 +255,11 @@ const AdminProductos = () => {
       <h1>
         Productos Registrados {animal?.nombre && `- ${animal.nombre}`}
       </h1>
+              <SearchComponent 
+                data={productos}
+                setFilteredData={setFilteredData}
+                searchFields={['nombre', 'estado', 'id_producto', 'descripcion', 'stock', 'precio', 'marca', 'categoria']}
+              />
         <Button 
           variant="primary" 
           className="mb-3" 
@@ -253,7 +268,7 @@ const AdminProductos = () => {
         >
           Agregar Producto
         </Button>
-        <Table striped bordered hover responsive>
+        <Table className="crud-table" striped bordered hover responsive>
           <thead>
             <tr>
               <th>ID</th>
@@ -270,8 +285,10 @@ const AdminProductos = () => {
             </tr>
           </thead>
           <tbody>
-            {productos.length > 0 ? (
-              productos.map((producto) => (
+          {filteredData.length > 0 ? (
+              filteredData
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((producto) => (
                 <tr key={producto.id_producto}>
                   <td>{producto.id_producto}</td>
                   <td>{producto.nombre}</td>
@@ -336,8 +353,14 @@ const AdminProductos = () => {
         </Table>
 
 
+        <PaginationComponent 
+          data={filteredData}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
 
-        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
+        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" className="modal-override categoria-modal">
           <Modal.Header closeButton>
             <Modal.Title>{isNewProducto ? 'Agregar Producto' : 'Editar Producto'}</Modal.Title>
           </Modal.Header>

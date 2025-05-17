@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import './proov.css';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Menu from '../../components/AdminNavbar/admin';
-
-const apiUrl = 'http://localhost:5000';
+import API_BASE_URL from '../../config/apiConfig';
+import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
+import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
 
 const AdminProveedores = () => {
   const [proveedores, setProveedores] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [showModal, setShowModal] = useState(false);
   const [isNewProvider, setIsNewProvider] = useState(false);
   const [editProvider, setEditProvider] = useState({
@@ -22,6 +25,10 @@ const AdminProveedores = () => {
     fetchProveedores();
   }, []);
 
+  useEffect(() => {
+    setFilteredData(proveedores);
+  }, [proveedores]);
+
   const fetchProveedores = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -30,11 +37,14 @@ const AdminProveedores = () => {
         return;
       }
 
-      const response = await axios.get(`${apiUrl}/adminProveedor`, {
+      const response = await axios.get(`${API_BASE_URL}/adminProveedor`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setProveedores(response.data.proveedores);
+      setProveedores(response.data.proveedores.map(p => ({
+        ...p,
+        estado: p.estado || 'activo'
+      })));
     } catch (error) {
       console.error("Error al obtener los proveedores:", error.response?.data || error.message);
     }
@@ -74,12 +84,12 @@ const AdminProveedores = () => {
       }
 
       if (isNewProvider) {
-        await axios.post(`${apiUrl}/adminProveedor`, editProvider, {
+        await axios.post(`${API_BASE_URL}/adminProveedor`, editProvider, {
           headers: { Authorization: `Bearer ${token}` }
         });
         alert('Proveedor creado exitosamente');
       } else {
-        await axios.put(`${apiUrl}/adminProveedor/${editProvider.id_proveedor}`, editProvider, {
+        await axios.put(`${API_BASE_URL}/adminProveedor/${editProvider.id_proveedor}`, editProvider, {
           headers: { Authorization: `Bearer ${token}` }
         });
         alert('Proveedor actualizado exitosamente');
@@ -94,6 +104,10 @@ const AdminProveedores = () => {
   };
 
   const toggleProveedorEstado = async (id_proveedor, estadoActual) => {
+    if (!window.confirm(`¿Estás seguro que deseas ${estadoActual === 'activo' ? 'desactivar' : 'activar'} este proveedor?`)) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -104,7 +118,7 @@ const AdminProveedores = () => {
       const nuevoEstado = estadoActual === 'activo' ? 'inactivo' : 'activo';
 
       const response = await axios.patch(
-        `${apiUrl}/adminProveedor/${id_proveedor}`, 
+        `${API_BASE_URL}/adminProveedor/${id_proveedor}`, 
         { estado: nuevoEstado }, 
         { headers: { Authorization: `Bearer ${token}` }}
       );
@@ -121,8 +135,19 @@ const AdminProveedores = () => {
         alert(`Proveedor ${nuevoEstado === 'activo' ? 'activado' : 'desactivado'} exitosamente`);
       }
     } catch (error) {
-      console.error("Error al cambiar estado del proveedor:", error.response?.data || error.message);
-      alert(`Error al cambiar estado del proveedor: ${error.response?.data?.mensaje || error.message}`);
+      console.error("Error al cambiar estado del proveedor:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      const errorMsg = error.response?.data?.mensaje || 
+                      error.response?.data?.message || 
+                      error.message || 
+                      "Error desconocido";
+      
+      alert(`Error al cambiar estado: ${errorMsg}`);
+      
       await fetchProveedores();
     }
   };
@@ -132,12 +157,16 @@ const AdminProveedores = () => {
       <Menu />
       <div className="content-container">
         <h1>Proveedores Registrados</h1>
-        
-        <Button variant="primary" className="mb-3" onClick={handleAddProvider}>
+        <SearchComponent 
+          data={proveedores}
+          setFilteredData={setFilteredData}
+          searchFields={['nombre', 'estado', 'id_proveedor', 'telefono', 'correo']}
+        />
+        <Button className="crud-btn crud-btn-primary mb-3" onClick={handleAddProvider}>
           Agregar Proveedor
         </Button>
 
-        <Table striped bordered hover responsive>
+        <Table className="crud-table" striped bordered hover responsive>
           <thead>
             <tr>
               <th>ID</th>
@@ -149,34 +178,34 @@ const AdminProveedores = () => {
             </tr>
           </thead>
           <tbody>
-            {proveedores.length > 0 ? (
-              proveedores.map((proveedor) => (
-                <tr key={proveedor.id_proveedor}>
-                  <td>{proveedor.id_proveedor}</td>
-                  <td>{proveedor.nombre}</td>
-                  <td>{proveedor.telefono}</td>
-                  <td>{proveedor.correo}</td>
-                  <td className={proveedor.estado === 'activo' ? 'text-success' : 'text-danger'}>
-                    {proveedor.estado}
-                  </td>
-                  <td>
-                    <Button 
-                      variant="warning" 
-                      className="me-2" 
-                      onClick={() => handleEditProvider(proveedor)}
-                    >
-                      Editar
-                    </Button>
-                    <Button 
-                      variant={proveedor.estado === 'activo' ? 'danger' : 'success'}
-                      onClick={() => toggleProveedorEstado(proveedor.id_proveedor, proveedor.estado)}
-                      disabled={proveedor.estado === undefined}
-                    >
-                      {proveedor.estado === 'activo' ? 'Desactivar' : 'Activar'}
-                    </Button>
-                  </td>
-                </tr>
-              ))
+            {filteredData.length > 0 ? (
+              filteredData
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((proveedor) => (
+                  <tr key={proveedor.id_proveedor}>
+                    <td>{proveedor.id_proveedor}</td>
+                    <td>{proveedor.nombre}</td>
+                    <td>{proveedor.telefono}</td>
+                    <td>{proveedor.correo}</td>
+                    <td className={proveedor.estado === 'activo' ? 'text-success' : 'text-danger'}>
+                      {proveedor.estado}
+                    </td>
+                    <td>
+                      <Button 
+                        className="crud-btn crud-btn-warning me-2" 
+                        onClick={() => handleEditProvider(proveedor)}
+                      >
+                        Editar
+                      </Button>
+                      <Button 
+                        className={`crud-btn ${proveedor.estado === 'activo' ? 'crud-btn-danger' : 'crud-btn-success'}`}
+                        onClick={() => toggleProveedorEstado(proveedor.id_proveedor, proveedor.estado)}
+                      >
+                        {proveedor.estado === 'activo' ? 'Desactivar' : 'Activar'}
+                      </Button>
+                    </td>
+                  </tr>
+                ))
             ) : (
               <tr>
                 <td colSpan="6" className="text-center">No hay proveedores disponibles.</td>
@@ -184,8 +213,14 @@ const AdminProveedores = () => {
             )}
           </tbody>
         </Table>
-
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        
+        <PaginationComponent 
+          data={filteredData}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+        <Modal show={showModal} onHide={() => setShowModal(false)} className="modal-override categoria-modal">
           <Modal.Header closeButton>
             <Modal.Title>{isNewProvider ? 'Agregar Proveedor' : 'Editar Proveedor'}</Modal.Title>
           </Modal.Header>
@@ -198,8 +233,14 @@ const AdminProveedores = () => {
                   name="nombre"
                   value={editProvider.nombre}
                   onChange={handleInputChange}
+                  placeholder="Ingrese el nombre del proveedor"
+                  pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,}$"
+                  title="Solo letras y espacios. Mínimo 2 caracteres."
                   required
                 />
+                <Form.Text className="text-muted">
+                  Solo letras, mínimo 2 caracteres.
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3">
@@ -209,8 +250,15 @@ const AdminProveedores = () => {
                   name="telefono"
                   value={editProvider.telefono}
                   onChange={handleInputChange}
+                  placeholder="Ingrese número de teléfono"
+                  pattern="^\d{10}$"
+                  title="Ingrese un número de 10 dígitos."
+                  maxLength={10}
                   required
                 />
+                <Form.Text className="text-muted">
+                  Ingrese un número de 10 dígitos.
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3">
@@ -220,8 +268,14 @@ const AdminProveedores = () => {
                   name="correo"
                   value={editProvider.correo}
                   onChange={handleInputChange}
+                  placeholder="user@ejemplo.com"
+                  pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                  title="Ingrese un correo válido (ej. user@dominio.com)."
                   required
                 />
+                <Form.Text className="text-muted">
+                  Ejemplo: user@ejemplo.com
+                </Form.Text>
               </Form.Group>
 
               <Button variant="secondary" onClick={() => setShowModal(false)}>

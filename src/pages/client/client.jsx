@@ -3,11 +3,15 @@ import './client.css';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
 import Menu from '../../components/AdminNavbar/admin';
-
-const apiUrl = 'http://localhost:5000';
+import API_BASE_URL from '../../config/apiConfig';
+import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
+import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
 
 const AdminClientes = () => {
   const [usuarios, setUsuarios] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [tiposDoc, setTiposDoc] = useState([]);
   
   const [showModal, setShowModal] = useState(false);
@@ -25,15 +29,17 @@ const AdminClientes = () => {
     contrasena: ''
   });
 
-
-  // Primero cargar tipos de documento y luego usuarios
+  // Cargar tipos de documento y luego usuarios
   useEffect(() => {
     const fetchData = async () => {
-      await fetchTiposDoc(); // Primero obtenemos los tipos de documento
+      await fetchTiposDoc();
     };
     fetchData();
   }, []);
-  
+
+  useEffect(() => {
+    setFilteredData(usuarios);
+  }, [usuarios]);
 
   useEffect(() => {
     if (tiposDoc.length > 0) {
@@ -49,7 +55,7 @@ const AdminClientes = () => {
         return;
       }
 
-      const response = await axios.get(`${apiUrl}/Priv`, {
+      const response = await axios.get(`${API_BASE_URL}/Priv`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -58,19 +64,29 @@ const AdminClientes = () => {
         return {
           ...usuario,
           tipo_doc_nombre: tipoDocumento ? tipoDocumento.Nombre : 'N/A',
-          estado: usuario.estado || 'Activo'
+          estado: usuario.estado || 'Activo' // Asegurar que siempre tenga estado
         };
       });
 
       setUsuarios(usuariosConTipoDoc);
     } catch (error) {
-      console.error("Error al obtener los usuarios:", error);
+      console.error("Error al obtener los usuarios:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      if (error.response?.status === 401) {
+        alert("Tu sesión ha expirado. Por favor inicia sesión nuevamente.");
+      } else {
+        alert("Error al cargar usuarios. Por favor intenta nuevamente.");
+      }
     }
   };
 
   const fetchTiposDoc = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/tipo_doc`);
+      const response = await axios.get(`${API_BASE_URL}/tipo_doc`);
       setTiposDoc(response.data.tipo_docs || response.data);
     } catch (error) {
       console.error("Error al obtener los tipos de documento:", error);
@@ -78,7 +94,7 @@ const AdminClientes = () => {
   };
 
   const handleAddUser = () => {
-    setIsNewUser(true);  // Indicamos que es un nuevo usuario
+    setIsNewUser(true);
     setEditUser({
       id_usuario: '',
       nombres: '',
@@ -89,19 +105,19 @@ const AdminClientes = () => {
       num_documento: '',
       direccion: '',
       estado: 'Activo',
-      contrasena: ''  // Agregar el campo de contraseña
+      contrasena: ''
     });
-    setShowModal(true); // Mostrar el modal
+    setShowModal(true);
   };
 
   const handleEditUser = (usuario) => {
-    setIsNewUser(false);  // Indicamos que estamos editando un usuario
+    setIsNewUser(false);
     setEditUser({
       ...usuario,
       tipo_doc: usuario.tipo_doc?.toString() || '',
-      contrasena: ''  // Limpiar la contraseña, no debe ser editable
+      contrasena: ''
     });
-    setShowModal(true);  // Mostrar el modal
+    setShowModal(true);
   };
 
   const handleInputChange = (e) => {
@@ -118,7 +134,6 @@ const AdminClientes = () => {
         tipo_doc: parseInt(editUser.tipo_doc)
       };
 
-      // Si es edición y no se ha ingresado nueva contraseña, eliminarla del objeto
       if (!isNewUser && !userData.contrasena) {
         delete userData.contrasena;
       }
@@ -134,12 +149,12 @@ const AdminClientes = () => {
           alert('La contraseña es requerida para nuevos usuarios');
           return;
         }
-        await axios.post(`${apiUrl}/Priv`, userData, {
+        await axios.post(`${API_BASE_URL}/Priv`, userData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         alert('Usuario creado exitosamente');
       } else {
-        await axios.put(`${apiUrl}/Priv/${editUser.id_usuario}`, userData, {
+        await axios.put(`${API_BASE_URL}/Priv/${editUser.id_usuario}`, userData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         alert('Usuario actualizado exitosamente');
@@ -154,6 +169,10 @@ const AdminClientes = () => {
   };
 
   const toggleUsuarioEstado = async (id_usuario, estadoActual) => {
+    if (!window.confirm(`¿Estás seguro que deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} este usuario?`)) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -164,12 +183,13 @@ const AdminClientes = () => {
       const nuevoEstado = estadoActual === 'Activo' ? 'Inactivo' : 'Activo';
 
       const response = await axios.patch(
-        `${apiUrl}/Priv/${id_usuario}`, 
+        `${API_BASE_URL}/Priv/${id_usuario}`, 
         { estado: nuevoEstado }, 
         { headers: { Authorization: `Bearer ${token}` }}
       );
 
       if (response.status === 200) {
+        // Actualización optimista del estado
         setUsuarios(prevUsuarios => 
           prevUsuarios.map(usuario => 
             usuario.id_usuario === id_usuario 
@@ -181,9 +201,20 @@ const AdminClientes = () => {
         alert(`Usuario ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'} exitosamente`);
       }
     } catch (error) {
-      console.error("Error al cambiar estado del usuario:", error.response?.data || error.message);
-      alert(`Error al cambiar estado del usuario: ${error.response?.data?.mensaje || error.message}`);
-      // Refrescamos los datos en caso de error para asegurar consistencia
+      console.error("Error al cambiar estado del usuario:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      const errorMsg = error.response?.data?.mensaje || 
+                      error.response?.data?.message || 
+                      error.message || 
+                      "Error desconocido";
+      
+      alert(`Error al cambiar estado: ${errorMsg}`);
+      
+      // Recargar datos para mantener consistencia
       await fetchUsuarios();
     }
   };
@@ -193,12 +224,17 @@ const AdminClientes = () => {
       <Menu />
       <div className="content-container">
         <h1>Usuarios Registrados</h1>
-
-        <Button variant="primary" className="mb-3"  onClick={handleAddUser}>
+        <SearchComponent 
+          data={usuarios}
+          setFilteredData={setFilteredData}
+          searchFields={['nombres', 'apellidos', 'num_documento', 'estado', 'id_usuario', 'email']}
+        />
+        <Button className="crud-btn crud-btn-primary mb-3" onClick={handleAddUser}>
           Agregar Usuario
         </Button>
 
-        <Table striped bordered hover responsive>
+        <div className="table-responsive-wrapper"> 
+        <Table className="crud-table" striped bordered hover>
           <thead>
             <tr>
               <th>ID</th>
@@ -214,38 +250,38 @@ const AdminClientes = () => {
             </tr>
           </thead>
           <tbody>
-            {usuarios.length > 0 ? (
-              usuarios.map((usuario) => (
-                <tr key={usuario.id_usuario}>
-                  <td>{usuario.id_usuario}</td>
-                  <td>{usuario.nombres}</td>
-                  <td>{usuario.apellidos}</td>
-                  <td>{usuario.telefono}</td>
-                  <td>{usuario.email}</td>
-                  <td>{usuario.tipo_doc_nombre}</td>
-                  <td>{usuario.num_documento}</td>
-                  <td>{usuario.direccion}</td>
-                  <td className={usuario.estado === 'Activo' ? 'text-success' : 'text-danger'}>
-                    {usuario.estado}
-                  </td>
-                  <td>
-                    <Button 
-                      variant="warning" 
-                      className="me-2" 
-                      onClick={() => handleEditUser(usuario)}
-                    >
-                      Editar
-                    </Button>
-                    <Button 
-                      variant={usuario.estado === 'Activo' ? 'danger' : 'success'}
-                      onClick={() => toggleUsuarioEstado(usuario.id_usuario, usuario.estado)}
-                      disabled={usuario.estado === undefined}
-                    >
-                      {usuario.estado === 'Activo' ? 'Desactivar' : 'Activar'}
-                    </Button>
-                  </td>
-                </tr>
-              ))
+            {filteredData.length > 0 ? (
+              filteredData
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((usuario) => (
+                  <tr key={usuario.id_usuario}>
+                    <td>{usuario.id_usuario}</td>
+                    <td>{usuario.nombres}</td>
+                    <td>{usuario.apellidos}</td>
+                    <td>{usuario.telefono}</td>
+                    <td>{usuario.email}</td>
+                    <td>{usuario.tipo_doc_nombre}</td>
+                    <td>{usuario.num_documento}</td>
+                    <td>{usuario.direccion}</td>
+                    <td className={usuario.estado === 'Activo' ? 'text-success' : 'text-danger'}>
+                      {usuario.estado}
+                    </td>
+                    <td>
+                      <Button 
+                        className="crud-btn crud-btn-warning me-2" 
+                        onClick={() => handleEditUser(usuario)}
+                      >
+                        Editar
+                      </Button>
+                      <Button 
+                        className={`crud-btn ${usuario.estado === 'Activo' ? 'crud-btn-danger' : 'crud-btn-success'}`}
+                        onClick={() => toggleUsuarioEstado(usuario.id_usuario, usuario.estado)}
+                      >
+                        {usuario.estado === 'Activo' ? 'Desactivar' : 'Activar'}
+                      </Button>
+                    </td>
+                  </tr>
+                ))
             ) : (
               <tr>
                 <td colSpan="10" className="text-center">No hay usuarios disponibles.</td>
@@ -253,12 +289,21 @@ const AdminClientes = () => {
             )}
           </tbody>
         </Table>
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        </div>
+
+        <PaginationComponent 
+          data={filteredData}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+
+        <Modal show={showModal} onHide={() => setShowModal(false)}  className="modal-override categoria-modal">
           <Modal.Header closeButton>
             <Modal.Title>{isNewUser ? 'Agregar Usuario' : 'Editar Usuario'}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Form onSubmit={handleSubmit}>
+            <Form onSubmit={handleSubmit} className="modal-form">
               <Form.Group className="mb-3" controlId="formNombre">
                 <Form.Label>Nombre</Form.Label>
                 <Form.Control 
@@ -266,8 +311,15 @@ const AdminClientes = () => {
                   name="nombres"
                   value={editUser.nombres}
                   onChange={handleInputChange}
+                  placeholder="Ingrese su nombre"
+                  pattern="^[a-zA-ZÀ-ÿ\s]{2,50}$"
+                  title="Solo letras y espacios (mínimo 2 caracteres)."
+                  autoComplete="off"
                   required
                 />
+                <Form.Text className="text-muted">
+                  Ingrese solo letras y espacios. Mínimo 2 caracteres.
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="formApellido">
@@ -277,19 +329,34 @@ const AdminClientes = () => {
                   name="apellidos"
                   value={editUser.apellidos}
                   onChange={handleInputChange}
+                  placeholder="Ingrese sus apellidos"
+                  pattern="^[a-zA-ZÀ-ÿ\s]{2,50}$"
+                  title="Solo letras y espacios (mínimo 2 caracteres)."
+                  autoComplete="off"
                   required
                 />
+                <Form.Text className="text-muted">
+                  Ingrese solo letras y espacios. Mínimo 2 caracteres.
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="formTelefono">
                 <Form.Label>Teléfono</Form.Label>
-                <Form.Control 
+                <Form.Control
                   type="tel"
                   name="telefono"
                   value={editUser.telefono}
+                  placeholder="Ingrese número de celular"
+                  maxLength="10"
+                  autoComplete="off"
+                  pattern="[0-9]{10}"
+                  title="Ingresar solo números"
                   onChange={handleInputChange}
                   required
                 />
+                <Form.Text className="text-muted">
+                  Introduce tu número de celular.
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="formEmail">
@@ -299,8 +366,15 @@ const AdminClientes = () => {
                   name="email"
                   value={editUser.email}
                   onChange={handleInputChange}
+                  placeholder="Ingrese su correo electrónico"
+                  pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                  title="Ingrese un correo válido. Ejemplo: usuario@ejemplo.com"
+                  autoComplete="off"
                   required
                 />
+                <Form.Text className="text-muted">
+                  Formato válido: usuario@ejemplo.com
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="formTipoDoc">
@@ -328,8 +402,15 @@ const AdminClientes = () => {
                   name="num_documento"
                   value={editUser.num_documento}
                   onChange={handleInputChange}
+                  placeholder="Ingrese solo números"
+                  pattern="^\d+$"
+                  title="Ingrese solo números sin espacios ni letras"
+                  autoComplete="off"
                   required
                 />
+                <Form.Text className="text-muted">
+                  Solo números permitidos.
+                </Form.Text>
               </Form.Group>
               )}
 
@@ -340,8 +421,15 @@ const AdminClientes = () => {
                   name="direccion"
                   value={editUser.direccion}
                   onChange={handleInputChange}
+                  placeholder="Ej: Calle 123 #45-67, Bogotá"
+                  pattern="^[A-Za-z0-9\s#\-.,°]+$"
+                  title="Ingrese una dirección válida (letras, números, espacios y símbolos como # - . , °)"
+                  autoComplete="off"
                   required
                 />
+                <Form.Text className="text-muted">
+                  Puede incluir letras, números y símbolos como # - . , °
+                </Form.Text>
               </Form.Group>
 
               {/* Campo de contraseña solo visible al crear nuevo usuario */}
@@ -353,8 +441,15 @@ const AdminClientes = () => {
                     name="contrasena"
                     value={editUser.contrasena}
                     onChange={handleInputChange}
+                    placeholder="Ingrese su contraseña"
+                    pattern="^(?=.*[A-Z])(?=(?:.*[a-z]){5,})(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$"
+                    title="Debe tener 1 mayúscula, al menos 5 minúsculas, 1 número, 1 símbolo (@$!%*?&) y entre 8 y 30 caracteres."
+                    autoComplete="off"
                     required
                   />
+                  <Form.Text className="text-muted">
+                    8-30 caracteres, con mayúsculas, minúsculas, número y símbolo.
+                  </Form.Text>
                 </Form.Group>
               )}
 

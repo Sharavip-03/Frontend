@@ -81,13 +81,14 @@ export const NavBar = () => {
           <Modal.Title>Perfil de Usuario</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Perfil />
+          <Perfil onClose={handleClosePerfil} /> 
         </Modal.Body>
       </Modal>
 
       {/* Modal de Login */}
-      <LoginModal show={showLoginModal} handleClose={handleCloseLoginModal} />
-
+      <div className="modal-position-fix">
+        <LoginModal show={showLoginModal} handleClose={handleCloseLoginModal} />
+      </div>
       {/* Carro (Offcanvas) */}
       <Carro show={showShopping} setShow={setshowShopping} />
     </>

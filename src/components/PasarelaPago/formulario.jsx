@@ -5,8 +5,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { FaLock, FaCreditCard, FaMoneyBillWave, FaExchangeAlt, FaTimes } from 'react-icons/fa';
 import './FormularioPago.css';
-
-const apiUrl = 'http://localhost:5000';
+import API_BASE_URL from '../../config/apiConfig';
 
 const FormularioPago = () => {
     const { id_factura: idFacturaParam } = useParams();
@@ -41,7 +40,7 @@ const FormularioPago = () => {
                     return;
                 }
         
-                const facturaResponse = await axios.get(`${apiUrl}/PrivFactura/${id_factura}`, {
+                const facturaResponse = await axios.get(`${API_BASE_URL}/PrivFactura/${id_factura}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
@@ -143,7 +142,7 @@ const FormularioPago = () => {
                 didOpen: () => Swal.showLoading()
             });
     
-            const response = await axios.post(`${apiUrl}/api/pagos/procesar`, datosPago, {
+            const response = await axios.post(`${API_BASE_URL}/api/pagos/procesar`, datosPago, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
@@ -182,7 +181,7 @@ const FormularioPago = () => {
 
     const cancelarPago = async () => {
         try {
-            await axios.post(`${apiUrl}/api/pagos/cancelar/${formData.id_factura}`, {}, {
+            await axios.post(`${API_BASE_URL}/api/pagos/cancelar/${formData.id_factura}`, {}, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             navigate('/');

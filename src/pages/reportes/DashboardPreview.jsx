@@ -4,8 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Menu from "../../components/AdminNavbar/admin";
 import "./reportes.css";
-
-const apiUrl = "http://localhost:5000";
+import API_BASE_URL from '../../config/apiConfig';
 
 const DashboardPreview = () => {
   const [data, setData] = useState({
@@ -20,9 +19,9 @@ const DashboardPreview = () => {
     const fetchData = async () => {
       try {
         const [ventasRes, productosRes, usuariosRes] = await Promise.all([
-          axios.get(`${apiUrl}/api/reportes/ventas?limit=7`),
-          axios.get(`${apiUrl}/api/reportes/productos?limit=3`),
-          axios.get(`${apiUrl}/api/reportes/usuarios`)
+          axios.get(`${API_BASE_URL}/api/reportes/ventas?limit=7`),
+          axios.get(`${API_BASE_URL}/api/reportes/productos?limit=3`),
+          axios.get(`${API_BASE_URL}/api/reportes/usuarios`)
         ]);
 
         setData({

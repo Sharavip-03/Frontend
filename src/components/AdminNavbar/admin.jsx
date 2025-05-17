@@ -66,7 +66,6 @@ const Menu = () => {
               { name: "Clientes", path: "/admin/client" },
               { name: "Empleados", path: "/admin/empleado" },
               { name: "Proveedores", path: "/admin/proveedores" },
-              { name: "Rol", path: "/admin/rol" }
             ]} 
           />
           <SidebarItem 

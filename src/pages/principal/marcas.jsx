@@ -1,12 +1,15 @@
 // marcas.jsx
 import React, { useEffect, useState } from 'react';
 import './marcas.css';
+import API_BASE_URL from '../../config/apiConfig';
 
 const Marcas = () => {
   const [marcas, setMarcas] = useState([]);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/PrivMarcas')
+
+
+    fetch(`${API_BASE_URL}/PrivMarcas`)
       .then(response => response.json())
       .then(data => {
         if (data.marcas) {

@@ -8,8 +8,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import "./reportes.css";
-
-const apiUrl = "http://localhost:5000";
+import API_BASE_URL from '../../config/apiConfig';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -25,7 +24,7 @@ const UsuariosReport = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${apiUrl}/api/reportes/usuarios`);
+        const response = await axios.get(`${API_BASE_URL}/api/reportes/usuarios`);
         setData({
           usuarios_activos: response.data.usuarios_activos,
           nuevos_clientes: response.data.nuevos_clientes,

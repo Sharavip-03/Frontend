@@ -4,10 +4,7 @@ import Offcanvas from 'react-bootstrap/Offcanvas';
 import { Button, ListGroup, Badge } from 'react-bootstrap';
 import axios from 'axios';
 import LoginModal from "../../components/Navbar/LoginModal.jsx";
-
-
-
-const apiUrl = 'http://localhost:5000';
+import API_BASE_URL from '../../config/apiConfig';
 
 function Carro({ show, setShow }) {
   const [cartItems, setCartItems] = useState([]);
@@ -30,7 +27,7 @@ function Carro({ show, setShow }) {
           return;
         }
         
-        const response = await axios.get(`${apiUrl}/Carrito/${userId}`, {
+        const response = await axios.get(`${API_BASE_URL}/Carrito/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -90,7 +87,7 @@ function Carro({ show, setShow }) {
       }
       
       await axios.put(
-        `${apiUrl}/Carrito/producto/${carritoId}/${productId}`,
+        `${API_BASE_URL}/Carrito/producto/${carritoId}/${productId}`,
         { cantidad: newQuantity },
         {
           headers: {
@@ -121,7 +118,7 @@ function Carro({ show, setShow }) {
         throw new Error("No se pudo identificar el carrito");
       }
       
-      await axios.delete(`${apiUrl}/Carrito/producto/${carritoId}/${productId}`, {
+      await axios.delete(`${API_BASE_URL}/Carrito/producto/${carritoId}/${productId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -140,7 +137,7 @@ function Carro({ show, setShow }) {
         const token = localStorage.getItem('token');
         
         // 1. Obtener carrito
-        const carritoResponse = await axios.get(`${apiUrl}/Carrito/${userId}`, {
+        const carritoResponse = await axios.get(`${API_BASE_URL}/Carrito/${userId}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -156,7 +153,7 @@ function Carro({ show, setShow }) {
             try {
                 // 2.1 Obtener detalles del producto (CORREGIDO: usa /PrivProd/)
                 const productoResponse = await axios.get(
-                    `${apiUrl}/PrivProd/${item.id_producto}`,
+                    `${API_BASE_URL}/PrivProd/${item.id_producto}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
@@ -245,7 +242,7 @@ const handleProceedToCheckout = async () => {
 
       const userId = localStorage.getItem('id');
       const response = await axios.post(
-          `${apiUrl}/Carrito/procesar/${userId}`,
+          `${API_BASE_URL}/Carrito/procesar/${userId}`,
           {},
           {
               headers: {
@@ -278,7 +275,7 @@ const handleProceedToCheckout = async () => {
       try {
           const userId = localStorage.getItem('id');
           const token = localStorage.getItem('token');
-          const res = await axios.get(`${apiUrl}/Carrito/${userId}`, {
+          const res = await axios.get(`${API_BASE_URL}/Carrito/${userId}`, {
               headers: { Authorization: `Bearer ${token}` }
           });
           setCartItems(res.data?.productos || []);

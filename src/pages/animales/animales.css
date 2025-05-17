@@ -1,0 +1,49 @@
+/* En tu archivo animales.css */
+.crud-btn {
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 8px 15px !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    cursor: pointer !important;
+  }
+  
+  /* Sobrescribe los estilos específicos de Bootstrap */
+  .crud-btn-primary {
+    background-color: #FF8357 !important;
+    color: white !important;
+  }
+  
+  .crud-btn-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+  }
+  
+  .crud-btn-danger {
+    background-color: #dc3545 !important;
+    color: white !important;
+  }
+  
+  /* Efectos hover */
+  .crud-btn-primary:hover {
+    background-color: #e66a3d !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(255, 131, 87, 0.3) !important;
+  }
+  
+  .crud-btn-warning:hover {
+    background-color: #e0a800 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3) !important;
+  }
+  
+  .crud-btn-danger:hover {
+    background-color: #c82333 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3) !important;
+  }

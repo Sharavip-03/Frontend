@@ -4,7 +4,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import AdminClientes from '../pages/client/client.jsx';
 import Perfil from '../pages/principal/perfil';
 import AdminEmpleados from '../pages/empleados/empleados.jsx';
-import AdminRoles from '../pages/roles/rol.jsx';
 import AdminCategorias from '../pages/categorias/cate.jsx';
 import AdminProveedores from '../pages/proveedores/proov.jsx';
 import PreaccesoProductos from '../pages/productos/preprod.jsx';
@@ -49,11 +48,6 @@ const NavbarRoutes = () => {
           <Route path="facturas" element={
             <ProtectedRoute staffOnly>
               <AdminFacturas />
-            </ProtectedRoute>
-          } />
-          <Route path="rol" element={
-            <ProtectedRoute adminOnly>
-              <AdminRoles />
             </ProtectedRoute>
           } />
           <Route path="categoria" element={

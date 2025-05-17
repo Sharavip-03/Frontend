@@ -1,163 +1,175 @@
 import React, { useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2'; // Librería para las alertas
-import './estilos.css';
-import RegistroModal from './SiginModal';
+import Swal from 'sweetalert2';
 import axios from 'axios';
+import API_BASE_URL from '../../config/apiConfig';
+import './AuthModalStyles.css';
+import RegistroModal from './SiginModal';
 
 const LoginModal = ({ show, handleClose }) => {
-  const urlAPI = 'http://127.0.0.1:5000/login';
-  const [userId, setUserId] = useState('');
-  const [userData, setUserData] = useState([]);
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     contrasena: '',
   });
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [error, setError] = useState('');
+  const [showRegister, setShowRegister] = useState(false);
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
+
+  const validateForm = () => {
+    const newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'El correo electrónico es requerido';
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Ingrese un correo electrónico válido';
+    }
+    
+    if (!formData.contrasena) {
+      newErrors.contrasena = 'La contraseña es requerida';
+    } else if (formData.contrasena.length < 8) {
+      newErrors.contrasena = 'La contraseña debe tener al menos 8 caracteres';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+    if (errors[id]) {
+      setErrors(prev => ({ ...prev, [id]: '' }));
+    }
+  };
+
+  const handleRegisterClick = () => {
+    setShowRegister(true);
+  };
+
+  const handleBackToLogin = () => {
+    setShowRegister(false);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!validateForm()) return;
     
     try {
-      const response = await fetch("http://127.0.0.1:5000/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-  
-      if (!response.ok) {
-        throw new Error("Error en la solicitud al servidor");
-      }
-  
-      const data = await response.json();
+      const response = await axios.post(`${API_BASE_URL}/login`, formData);
+      const { token_de_acceso, usuario } = response.data;
       
-      if (data.token_de_acceso) {
-        // Decodificar el token para obtener el rol
-        const tokenPayload = JSON.parse(atob(data.token_de_acceso.split('.')[1]));
+      if (token_de_acceso) {
+        const tokenPayload = JSON.parse(atob(token_de_acceso.split('.')[1]));
         const userRole = tokenPayload.rol;
-  
-        localStorage.setItem("token", data.token_de_acceso);
-        localStorage.setItem("id", data.usuario);
+
+        localStorage.setItem("token", token_de_acceso);
+        localStorage.setItem("id", usuario);
         localStorage.setItem("isLogged", true);
-        localStorage.setItem("rol", userRole); // Guardar el rol
-  
+        localStorage.setItem("rol", userRole);
+
         Swal.fire({
           icon: "success",
           title: "Inicio de sesión exitoso",
           showConfirmButton: false,
           timer: 1500,
         });
-  
+
         handleClose();
-  
-        // Redirección basada en el rol
-        if (userRole === 1) { // 1 = Admin
-          navigate("/admin/dashboard");
-        } else if (userRole === 3) { // 3 = Empleado
-          navigate("/admin/menu"); // O la ruta que corresponda para empleados
-        } else { // 2 = Cliente
-          navigate("/");
-        }
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: data.mensaje || "Email o contraseña incorrectos",
-        });
+
+        if (userRole === 1) navigate("/admin/dashboard");
+        else if (userRole === 3) navigate("/admin/menu");
+        else navigate("/");
       }
     } catch (error) {
-      console.error("Error en la solicitud al servidor", error);
+      const errorMsg = error.response?.data?.mensaje || "Error al iniciar sesión";
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Hubo un error al intentar iniciar sesión",
+        text: errorMsg,
       });
     }
   };
 
-  const handleRegisterClick = () => {
-    setIsRegistering(true);
-  };
-
-  const handleLoginClick = () => {
-    setIsRegistering(false);
-  };
-
-  const resetState = () => {
-    setIsRegistering(false);
-    setFormData({
-      email: '',
-      contrasena: '',
-    });
-    setError('');
-  };
-
   return (
-    <Modal
-      show={show}
-      onHide={handleClose}
-      onExited={resetState} // Restablecer el estado aquí
-      centered
-    >
-      <div className="wrapper modal-content">
-        <div className="modal-header">
-          <h1 className="modal-title">{isRegistering ? 'Registro' : 'Inicio de sesión'}</h1>
-          <button type="button" className="btn-close" onClick={handleClose} aria-label="Close"></button>
-        </div>
-        {!isRegistering ? (
-          <form id="login" className="formu" onSubmit={handleSubmit}>
-            <div className="input-box">
+    <>
+      <Modal 
+        show={show && !showRegister} 
+        onHide={() => {
+          setShowRegister(false);
+          handleClose();
+        }}
+        centered
+        className="registro-modal"
+        dialogClassName="modal-dialog-centered"
+
+      >
+        <Modal.Header className="registro-modal-header">
+          <Modal.Title className="registro-modal-title">Iniciar Sesión</Modal.Title>
+          <button 
+            type="button" 
+            className="registro-modal-close" 
+            onClick={handleClose}
+            aria-label="Close"
+          >
+            &times;
+          </button>
+        </Modal.Header>
+        <Modal.Body className="registro-modal-body">
+          <form onSubmit={handleSubmit} className="registro-form">
+            <div className="registro-form-group">
+              <label htmlFor="email" className="registro-form-label">Correo Electrónico</label>
               <input
                 type="email"
-                className="form-control"
                 id="email"
-                placeholder="Ingrese su correo electrónico"
+                className={`registro-form-input ${errors.email ? 'is-invalid' : ''}`}
+                placeholder="ejemplo@correo.com"
                 value={formData.email}
                 onChange={handleChange}
-                required
               />
+              {errors.email && <div className="registro-form-error">{errors.email}</div>}
             </div>
 
-            <div className="input-box">
+            <div className="registro-form-group">
+              <label htmlFor="contrasena" className="registro-form-label">Contraseña</label>
               <input
                 type="password"
-                className="form-control"
                 id="contrasena"
-                placeholder="Ingrese su contraseña"
+                className={`registro-form-input ${errors.contrasena ? 'is-invalid' : ''}`}
+                placeholder="••••••••"
                 value={formData.contrasena}
                 onChange={handleChange}
-                required
               />
+              {errors.contrasena && <div className="registro-form-error">{errors.contrasena}</div>}
             </div>
 
-            <button className='btn-link' type="submit">Entrar</button><br />
+            <button type="submit" className="registro-form-submit">
+              Ingresar
+            </button>
 
-            <div className="login-link">
-              <p>
-                ¿No tienes cuenta aún?{' '}
-                <button type="button" onClick={handleRegisterClick} className="btn-link">
-                  Regístrate
+            <div className="registro-form-footer">
+              <p className="registro-form-text">
+                ¿No tienes cuenta?{' '}
+                <button 
+                  type="button" 
+                  className="registro-form-link"
+                  onClick={handleRegisterClick}
+                >
+                  Regístrate aquí
                 </button>
               </p>
             </div>
           </form>
-        ) : (
-          <RegistroModal 
-            show={show} 
-            handleClose={handleClose} 
-            handleLoginClick={handleLoginClick}
-          />
-        )}
-      </div>
-    </Modal>
+        </Modal.Body>
+      </Modal>
+
+      <RegistroModal 
+        show={show && showRegister}
+        handleClose={() => setShowRegister(false)}
+        handleLoginClick={handleBackToLogin}
+      />
+    </>
   );
 };
 

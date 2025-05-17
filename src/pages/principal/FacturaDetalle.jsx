@@ -16,6 +16,7 @@ import {
   ShoppingBasket
 } from '@mui/icons-material';
 import './FacturaDetalle.css';
+import API_BASE_URL from '../../config/apiConfig';
 
 const FacturaDetalle = () => {
   const { idFactura } = useParams();
@@ -40,7 +41,7 @@ const FacturaDetalle = () => {
           return;
         }
         
-        const response = await axios.get(`http://localhost:5000/factura/${idFactura}`, {
+        const response = await axios.get(`${API_BASE_URL}/factura/${idFactura}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
