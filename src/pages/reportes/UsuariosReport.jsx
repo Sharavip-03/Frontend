@@ -23,8 +23,12 @@ const UsuariosReport = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
         setLoading(true);
-        const response = await axios.get(`${API_BASE_URL}/api/reportes/usuarios`);
+        const response = await axios.get(`${API_BASE_URL}/api/reportes/usuarios`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
         setData({
           usuarios_activos: response.data.usuarios_activos,
           nuevos_clientes: response.data.nuevos_clientes,

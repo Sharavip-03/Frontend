@@ -17,7 +17,7 @@
 
 /* Links del navbar */
 .navbar-link {
-  background-color: #FF8357 !important;
+  background-color: #fac172 !important;
   color: white !important;
   padding: 8px 12px;
   border-radius: 5px;
@@ -27,8 +27,50 @@
 }
 
 .navbar-link:hover {
-  background-color: #ffb397 !important;
+  background-color: #FF8357 !important;
   transform: scale(1.05);
+}
+.navbar-link.navbar-scrolled .auth-links svg {
+  color: #FF8357;
+  /* Cambia el color a blanco cuando se hace scroll */
+}
+/* Estilos por defecto para los enlaces */
+.navbar-link {
+  color: #fac172;
+  /* Color de texto por defecto */
+  padding: 5px 10px;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  /* Transición suave */
+  text-decoration: none;
+  /* Elimina el subrayado */
+}
+
+/* Estilos cuando hay scroll */
+.navbar-link.scrolled {
+  color: #FF8357;
+  /* Cambia el color de texto al hacer scroll */
+  background-color: #fac172;
+  /* Cambia el color de fondo al hacer scroll */
+}
+
+/* Estilos cuando no hay scroll */
+.navbar-link.default {
+  background-color: transparent;
+  /* Fondo transparente cuando no hay scroll */
+}
+
+/* Íconos de perfil y carrito */
+.navbar-custom .auth-links svg {
+  color: #FF8357;
+  /* Color inicial */
+  transition: color 0.3s ease;
+}
+
+/* Cuando se hace scroll, los iconos cambian de color */
+.navbar-custom.navbar-scrolled .auth-links svg {
+  color: #FF8357;
+  /* Cambia el color a blanco cuando se hace scroll */
 }
 
 /* Imagen de usuario */
@@ -220,6 +262,86 @@ a:hover {
   box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
 }
 
+/* ========== SOBRESCRITURA COMPLETA DE ESTILOS DE TABLA ========== */
+.crud-table-container {
+  width: 100%;
+  overflow: auto;
+  margin-bottom: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+}
+
+.crud-table {
+  width: 100% !important;
+  margin-bottom: 0 !important;
+  border-collapse: collapse !important;
+  table-layout: auto !important;
+}
+
+/* Reset completo de estilos de Bootstrap */
+.crud-table > :not(caption) > * > * {
+  padding: 0.75rem 0.75rem !important;
+  background-color: transparent !important;
+  border-bottom-width: 1px !important;
+  box-shadow: none !important;
+}
+
+/* Cabecera personalizada */
+.crud-table thead th {
+  background-color: #FF8357 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  border: none !important;
+  padding: 15px 20px !important;
+}
+
+/* Celdas personalizadas */
+.crud-table tbody td {
+  padding: 12px 20px !important;
+  vertical-align: middle !important;
+  border-top: 1px solid #f0f0f0 !important;
+}
+
+/* Filas alternas */
+.crud-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9 !important;
+}
+
+/* Hover */
+.crud-table tbody tr:hover {
+  background-color: rgba(255, 131, 87, 0.05) !important;
+}
+
+/* Imágenes */
+.crud-table img {
+  max-width: 100px !important;
+  height: auto !important;
+  border-radius: 4px !important;
+}
+
+/* Botones */
+.crud-table .crud-btn {
+  margin: 2px !important;
+  white-space: nowrap !important;
+}
+
+/* Deshabilitar completamente el responsive de Bootstrap */
+.table-responsive {
+  overflow-x: visible !important;
+  -webkit-overflow-scrolling: auto !important;
+}
+
+.table-responsive > .table {
+  --bs-table-bg: transparent !important;
+  display: table !important;
+  width: 100% !important;
+  margin-bottom: 0 !important;
+}
 /* ========== SOBRESCRITURA COMPLETA DE BOOTSTRAP ========== */
 .table {
   --bs-table-bg: transparent;
@@ -320,6 +442,55 @@ a:hover {
 }
 /* ========== ESTILOS RESPONSIVOS CON SCROLLBAR VISIBLE ========== */
 @media (max-width: 768px) {
+  .crud-table-container {
+    border-radius: 0;
+    margin-left: -10px;
+    margin-right: -10px;
+    width: calc(100% + 20px);
+  }
+    /* Forzar el mismo diseño que en desktop */
+    .crud-table {
+      min-width: 100% !important;
+      display: table !important;
+    }
+    
+    .crud-table thead {
+      display: table-header-group !important;
+    }
+    
+    .crud-table tbody {
+      display: table-row-group !important;
+    }
+    
+    .crud-table tr {
+      display: table-row !important;
+    }
+    
+    .crud-table th,
+    .crud-table td {
+      display: table-cell !important;
+      white-space: normal !important;
+    }
+    
+    /* Ajustar tamaños para móvil */
+    .crud-table thead th {
+      padding: 12px 15px !important;
+      font-size: 15px !important;
+    }
+    
+    .crud-table tbody td {
+      padding: 10px 15px !important;
+      font-size: 14px !important;
+    }
+    
+    .crud-table img {
+      max-width: 80px !important;
+    }
+    
+    .crud-table .crud-btn {
+      padding: 8px 12px !important;
+      font-size: 13px !important;
+    }
   /* Contenedor principal con scroll horizontal */
   .crud-container {
     width: 100%;
@@ -452,6 +623,72 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+/* Estilos para el texto sobre la imagen hero */
+.hero-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  text-shadow: 4px 4px 4px rgba(243, 156, 134, 0.5);
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+  width: 100%;
+}
 
+.hero-text h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  padding: 20px;
+  border-radius: 15px;
+  display: inline-block;
+}
 
+/* Responsive para pantallas más pequeñas */
+@media (max-width: 768px) {
+  .hero-text h1 {
+    font-size: 2rem;
+    padding: 55px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-text h1 {
+    font-size: 1.5rem;
+    padding: 40px;
+  }
+}
+/* Estilos para el texto sobre la imagen hero */
+.hero-texto {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-shadow: 4px 4px 4px rgba(243, 156, 134, 0.5);
+  text-align: center;
+  color: white;
+  width: 100%;
+}
+
+.hero-texto h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 15px;
+  display: inline-block;
+}
+
+/* Responsive para pantallas más pequeñas */
+@media (max-width: 768px) {
+  .hero-texto h1 {
+    font-size: 1rem;
+    padding: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-texto h1 {
+    font-size: 1 rem;
+    padding: 50px;
+  }
+}
 

@@ -23,8 +23,11 @@ const ProductosReport = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
         setLoading(true);
-        const response = await axios.get(`${API_BASE_URL}/api/reportes/productos`);
+        const response = await axios.get(`${API_BASE_URL}/api/reportes/productos`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });  
         setData(response.data);
       } catch (error) {
         console.error("Error fetching products data:", error);

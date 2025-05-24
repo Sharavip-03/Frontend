@@ -6,6 +6,7 @@ import Menu from '../../components/AdminNavbar/admin';
 import API_BASE_URL from '../../config/apiConfig';
 import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
 import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
+import Swal from 'sweetalert2';
 
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
@@ -25,6 +26,7 @@ const AdminMarcas = () => {
     id_proveedor: '',
     imagen: '',
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     fetchMarcas();
@@ -35,6 +37,27 @@ const AdminMarcas = () => {
     setFilteredData(marcas);
   }, [marcas]);
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!editMarca.nombre.trim()) {
+      newErrors.nombre = 'El nombre es requerido';
+    } else if (!/^[a-zA-ZÀ-ÿ\s]{2,50}$/.test(editMarca.nombre)) {
+      newErrors.nombre = 'Solo letras y espacios (2-50 caracteres)';
+    }
+    
+    if (!editMarca.estado) {
+      newErrors.estado = 'El estado es requerido';
+    }
+    
+    if (!editMarca.id_proveedor) {
+      newErrors.id_proveedor = 'Seleccione un proveedor';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const fetchMarcas = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/PrivMarcas`);
@@ -44,6 +67,11 @@ const AdminMarcas = () => {
       })) || []);
     } catch (error) {
       console.error("Error al obtener las marcas:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al cargar las marcas'
+      });
     }
   };
 
@@ -72,9 +100,17 @@ const AdminMarcas = () => {
       });
       
       if (error.response?.status === 401) {
-        alert("Tu sesión ha expirado. Por favor inicia sesión nuevamente.");
+        Swal.fire({
+          icon: 'error',
+          title: 'Sesión expirada',
+          text: 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.'
+        });
       } else {
-        alert("Error al cargar proveedores. Por favor intenta nuevamente.");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al cargar proveedores. Por favor intenta nuevamente.'
+        });
       }
       
       setProveedores([]);
@@ -90,18 +126,23 @@ const AdminMarcas = () => {
       id_proveedor: '', 
       imagen: '' 
     });
+    setErrors({});
     setShowModal(true);
   };
 
   const handleEditMarca = (marca) => {
     setIsNewMarca(false);
     setEditMarca({ ...marca });
+    setErrors({});
     setShowModal(true);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditMarca({ ...editMarca, [name]: value });
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleImageUpload = async (e) => {
@@ -120,13 +161,20 @@ const AdminMarcas = () => {
       setEditMarca((prev) => ({ ...prev, imagen: imageUrl }));
     } catch (error) {
       console.error("Error al subir la imagen:", error);
-      alert("Error al subir la imagen");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al subir la imagen'
+      });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+    
     try {
+      const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append('nombre', editMarca.nombre);
       formData.append('estado', editMarca.estado);
@@ -139,27 +187,52 @@ const AdminMarcas = () => {
         await axios.post(`${API_BASE_URL}/PrivMarcas`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`,
           },
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Marca creada exitosamente'
         });
       } else {
         await axios.put(`${API_BASE_URL}/PrivMarca/${editMarca.id_marca}`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`,
           },
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Marca actualizada exitosamente'
         });
       }
       setShowModal(false);
       fetchMarcas();
     } catch (error) {
       console.error("Error al guardar la marca:", error);
-      alert("Error al guardar la marca");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al guardar la marca'
+      });
     }
   };
 
   const handleStatusChange = async (id_marca, estadoActual) => {
-    if (!window.confirm(`¿Estás seguro que deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} esta marca?`)) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: `¿Estás seguro?`,
+      text: `¿Deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} esta marca?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí',
+      cancelButtonText: 'Cancelar'
+    });
+    
+    if (!result.isConfirmed) return;
 
     try {
       const token = localStorage.getItem("token");
@@ -176,10 +249,18 @@ const AdminMarcas = () => {
         )
       );
       
-      alert(`Marca ${nuevoEstado === 'Activo' ? 'activada' : 'desactivada'} exitosamente`);
+      Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: `Marca ${nuevoEstado === 'Activo' ? 'activada' : 'desactivada'} exitosamente`
+      });
     } catch (error) {
       console.error("Error al cambiar el estado:", error);
-      alert("Error al cambiar el estado");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al cambiar el estado'
+      });
       fetchMarcas();
     }
   };
@@ -197,7 +278,8 @@ const AdminMarcas = () => {
         <Button className="crud-btn crud-btn-primary mb-3" onClick={handleAddMarca}>
           Agregar Marca
         </Button>
-        <Table className="crud-table" striped bordered hover responsive>
+        <div className="crud-table-container">
+        <Table className="crud-table" responsive={false}>
           <thead>
             <tr>
               <th>ID</th>
@@ -252,6 +334,7 @@ const AdminMarcas = () => {
             )}
           </tbody>
         </Table>
+        </div>
 
         <PaginationComponent 
           data={filteredData}
@@ -260,68 +343,95 @@ const AdminMarcas = () => {
           setCurrentPage={setCurrentPage}
         />
 
-        <Modal show={showModal} onHide={() => setShowModal(false)} className="modal-override categoria-modal">
-          <Modal.Header closeButton>
-            <Modal.Title>{isNewMarca ? 'Agregar Marca' : 'Editar Marca'}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form onSubmit={handleSubmit}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nombre</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="nombre"
-                  value={editMarca.nombre}
-                  onChange={handleInputChange}
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Proveedor</Form.Label>
-                <Form.Select
-                  name="id_proveedor"
-                  value={editMarca.id_proveedor}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Seleccione un proveedor</option>
-                  {proveedores.map((proveedor) => (
-                    <option key={proveedor.id_proveedor} value={proveedor.id_proveedor}>
-                      {proveedor.nombre}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Estado</Form.Label>
-                <Form.Select
-                  name="estado"
-                  value={editMarca.estado}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                </Form.Select>
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Imagen</Form.Label>
-                <Form.Control type="file" accept="image/*" onChange={handleImageUpload} />
-                {editMarca.imagen && (
-                  <div className="mt-2">
-                    <img src={editMarca.imagen} alt="Vista previa" style={{ width: "100px", height: "auto" }} />
-                  </div>
-                )}
-              </Form.Group>
-              <Button variant="secondary" onClick={() => setShowModal(false)} className="me-2">
-                Cancelar
-              </Button>
-              <Button variant="primary" type="submit">
-                {isNewMarca ? 'Crear Marca' : 'Guardar Cambios'}
-              </Button>
-            </Form>
-          </Modal.Body>
-        </Modal>
+<Modal show={showModal} onHide={() => setShowModal(false)} className="modal-override categoria-modal">
+  <Modal.Header closeButton>
+    <Modal.Title>{isNewMarca ? 'Agregar Marca' : 'Editar Marca'}</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    <Form onSubmit={handleSubmit}>
+      <Form.Group className="mb-3" controlId="formNombreMarca">
+        <Form.Label>Nombre *</Form.Label>
+        <Form.Control
+          type="text"
+          name="nombre"
+          className={errors.nombre ? 'is-invalid' : ''}
+          value={editMarca.nombre}
+          onChange={handleInputChange}
+          required
+          pattern="^[a-zA-ZÀ-ÿ\s]{2,50}$"
+          title="Solo letras y espacios (2-50 caracteres). Campo obligatorio."
+        />
+        {errors.nombre && <div className="invalid-feedback">{errors.nombre}</div>}
+        <Form.Text className="text-muted">
+          Nombre de la marca (solo letras y espacios, 2-50 caracteres). Campo obligatorio.
+        </Form.Text>
+      </Form.Group>
+      <Form.Group className="mb-3" controlId="formProveedor">
+        <Form.Label>Proveedor *</Form.Label>
+        <Form.Select
+          name="id_proveedor"
+          className={errors.id_proveedor ? 'is-invalid' : ''}
+          value={editMarca.id_proveedor}
+          onChange={handleInputChange}
+          required
+          title="Seleccione un proveedor. Campo obligatorio."
+        >
+          <option value="">Seleccione un proveedor</option>
+          {proveedores.map((proveedor) => (
+            <option key={proveedor.id_proveedor} value={proveedor.id_proveedor}>
+              {proveedor.nombre}
+            </option>
+          ))}
+        </Form.Select>
+        {errors.id_proveedor && <div className="invalid-feedback">{errors.id_proveedor}</div>}
+        <Form.Text className="text-muted">
+          Seleccione el proveedor asociado a esta marca. Campo obligatorio.
+        </Form.Text>
+      </Form.Group>
+      <Form.Group className="mb-3" controlId="formEstadoMarca">
+        <Form.Label>Estado *</Form.Label>
+        <Form.Select
+          name="estado"
+          className={errors.estado ? 'is-invalid' : ''}
+          value={editMarca.estado}
+          onChange={handleInputChange}
+          required
+          title="Seleccione el estado de la marca. Campo obligatorio."
+        >
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </Form.Select>
+        {errors.estado && <div className="invalid-feedback">{errors.estado}</div>}
+        <Form.Text className="text-muted">
+          Estado actual de la marca en el sistema. Campo obligatorio.
+        </Form.Text>
+      </Form.Group>
+      <Form.Group className="mb-3" controlId="formImagenMarca">
+        <Form.Label>Imagen</Form.Label>
+        <Form.Control 
+          type="file" 
+          accept="image/*" 
+          onChange={handleImageUpload} 
+          title="Suba un logo o imagen representativa de la marca (opcional). Formatos aceptados: JPG, PNG, etc."
+        />
+        {editMarca.imagen && (
+          <div className="mt-2">
+            <img src={editMarca.imagen} alt="Vista previa" style={{ width: "100px", height: "auto" }} />
+          </div>
+        )}
+        <Form.Text className="text-muted">
+          Logo o imagen representativa de la marca (formatos: JPG, PNG, etc.).
+        </Form.Text>
+      </Form.Group>
+      <Button variant="secondary" onClick={() => setShowModal(false)} className="me-2">
+        Cancelar
+      </Button>
+      <Button variant="primary" type="submit">
+        {isNewMarca ? 'Crear Marca' : 'Guardar Cambios'}
+      </Button>
+    </Form>
+  </Modal.Body>
+</Modal>
       </div>
     </div>
   );

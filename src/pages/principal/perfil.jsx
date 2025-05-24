@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Button, Alert, Modal, Form } from "react-bootstrap";
+import { Button, Alert, Modal, Form, Spinner } from "react-bootstrap";
 import EditIcon from '@mui/icons-material/Edit';
 import "./Perfil.css";
 import API_BASE_URL from "../../config/apiConfig";
+import Swal from 'sweetalert2';
 
 const Perfil = ({ onClose }) => {
   const [tiposDoc, setTiposDoc] = useState([]);
@@ -38,7 +39,54 @@ const Perfil = ({ onClose }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+
+  const validateForm = () => {
+    const newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[0-9]{10}$/;
+    
+    if (!editUser.nombres.trim()) {
+      newErrors.nombres = 'Los nombres son requeridos';
+    } else if (!/^[a-zA-ZÀ-ÿ\s]{2,50}$/.test(editUser.nombres)) {
+      newErrors.nombres = 'Solo letras y espacios (2-50 caracteres)';
+    }
+    
+    if (!editUser.apellidos.trim()) {
+      newErrors.apellidos = 'Los apellidos son requeridos';
+    } else if (!/^[a-zA-ZÀ-ÿ\s]{2,50}$/.test(editUser.apellidos)) {
+      newErrors.apellidos = 'Solo letras y espacios (2-50 caracteres)';
+    }
+    
+    if (!editUser.email.trim()) {
+      newErrors.email = 'El correo es requerido';
+    } else if (!emailRegex.test(editUser.email)) {
+      newErrors.email = 'Ingrese un correo válido';
+    }
+    
+    if (!editUser.telefono.trim()) {
+      newErrors.telefono = 'El teléfono es requerido';
+    } else if (!phoneRegex.test(editUser.telefono)) {
+      newErrors.telefono = 'Debe tener 10 dígitos numéricos';
+    }
+    
+    if (!editUser.tipo_doc) {
+      newErrors.tipo_doc = 'Seleccione un tipo de documento';
+    }
+    
+    if (!editUser.direccion.trim()) {
+      newErrors.direccion = 'La dirección es requerida';
+    }
+    
+    if (editUser.contrasena && editUser.contrasena.length < 8) {
+      newErrors.contrasena = 'La contraseña debe tener al menos 8 caracteres';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const fetchTiposDoc = async () => {
     try {
@@ -51,13 +99,14 @@ const Perfil = ({ onClose }) => {
   };
 
   useEffect(() => {
-    fetchTiposDoc(); // Cargar tipos de documento al montar el componente
+    fetchTiposDoc();
   }, []);
 
   useEffect(() => {
     const usuarioId = localStorage.getItem("id");
     if (!usuarioId) {
       setError("No hay usuario autenticado");
+      setLoading(false);
       return;
     }
 
@@ -79,7 +128,6 @@ const Perfil = ({ onClose }) => {
           num_documento: clienteData.num_documento
         });
         
-        // Inicializar los datos de edición con los mismos valores
         setEditUser({
           nombres: clienteData.nombres,
           apellidos: clienteData.apellidos,
@@ -92,12 +140,13 @@ const Perfil = ({ onClose }) => {
         });
       } catch (err) {
         setError(err.response?.data?.mensaje || "Error al cargar el perfil");
+      } finally {
+        setLoading(false);
       }
     };
 
     cargarPerfil();
 
-    // Cambiar imagen cada 5 segundos
     const interval = setInterval(() => {
       setFade(true);
       setTimeout(() => {
@@ -115,21 +164,24 @@ const Perfil = ({ onClose }) => {
       ...prev,
       [name]: value
     }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+    
     try {
       const usuarioId = localStorage.getItem("id");
       const token = localStorage.getItem("token");
       
-      // Preparar datos para enviar, convirtiendo tipo_doc a número
       const userData = {
         ...editUser,
         tipo_doc: parseInt(editUser.tipo_doc)
       };
       
-      // Si no se ha ingresado nueva contraseña, eliminarla del objeto
       if (!userData.contrasena) {
         delete userData.contrasena;
       }
@@ -149,7 +201,6 @@ const Perfil = ({ onClose }) => {
         num_documento: editUser.num_documento
       });
       
-      // Cerrar el modal después de 2 segundos
       setTimeout(() => {
         setShowEditModal(false);
         setSuccess(null);
@@ -165,15 +216,24 @@ const Perfil = ({ onClose }) => {
     localStorage.removeItem("id");
     localStorage.removeItem("isLogged");
     if (onClose) onClose();
-    navigate("/");
-  };
+    window.location.reload();
+    };
 
-  // Función para obtener el nombre del tipo de documento
   const getTipoDocNombre = (tipoDocId) => {
     if (!tipoDocId) return "No especificado";
     const tipo = tiposDoc.find(t => t.id_TipoDocumento === parseInt(tipoDocId));
     return tipo ? tipo.Nombre : "Desconocido";
   };
+
+  if (loading) {
+    return (
+      <div className="perfil-wrapper">
+        <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+          <Spinner animation="border" variant="primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="perfil-wrapper">
@@ -190,7 +250,16 @@ const Perfil = ({ onClose }) => {
           <h2 className="perfil-nombre">{user.nombres} {user.apellidos}</h2>
           
           <div className="perfil-datos">
-
+            <div className="perfil-dato">
+              <span className="dato-label">Tipo de documento: </span>
+              <span>{getTipoDocNombre(user.tipo_doc)}</span>
+            </div>
+            
+            <div className="perfil-dato">
+              <span className="dato-label">Número de documento: </span>
+              <span>{user.num_documento || "No registrado"}</span>
+            </div>
+            
             <div className="perfil-dato">
               <span className="dato-label">Correo: </span>
               <span>{user.email}</span>
@@ -235,8 +304,7 @@ const Perfil = ({ onClose }) => {
         </div>
       </div>
 
-      {/* Modal de edición */}
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Editar Perfil</Modal.Title>
         </Modal.Header>
@@ -245,46 +313,68 @@ const Perfil = ({ onClose }) => {
           {error && <Alert variant="danger">{error}</Alert>}
           
           <Form onSubmit={handleEditSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Nombres</Form.Label>
+            <Form.Group className="mb-3" controlId="formNombres">
+              <Form.Label>Nombres *</Form.Label>
               <Form.Control
                 type="text"
                 name="nombres"
+                className={errors.nombres ? 'is-invalid' : ''}
                 value={editUser.nombres}
                 onChange={handleEditChange}
                 required
+                pattern="^[a-zA-ZÀ-ÿ\s]{2,50}$"
+                title="Solo letras y espacios (2-50 caracteres)"
               />
+              {errors.nombres && <div className="invalid-feedback">{errors.nombres}</div>}
+              <Form.Text className="text-muted">
+                Ingrese sus nombres (solo letras y espacios, 2-50 caracteres)
+              </Form.Text>
             </Form.Group>
             
-            <Form.Group className="mb-3">
-              <Form.Label>Apellidos</Form.Label>
+            <Form.Group className="mb-3" controlId="formApellidos">
+              <Form.Label>Apellidos *</Form.Label>
               <Form.Control
                 type="text"
                 name="apellidos"
+                className={errors.apellidos ? 'is-invalid' : ''}
                 value={editUser.apellidos}
                 onChange={handleEditChange}
                 required
+                pattern="^[a-zA-ZÀ-ÿ\s]{2,50}$"
+                title="Solo letras y espacios (2-50 caracteres)"
               />
+              {errors.apellidos && <div className="invalid-feedback">{errors.apellidos}</div>}
+              <Form.Text className="text-muted">
+                Ingrese sus apellidos (solo letras y espacios, 2-50 caracteres)
+              </Form.Text>
             </Form.Group>
             
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
+            <Form.Group className="mb-3" controlId="formEmail">
+              <Form.Label>Email *</Form.Label>
               <Form.Control
                 type="email"
                 name="email"
+                className={errors.email ? 'is-invalid' : ''}
                 value={editUser.email}
                 onChange={handleEditChange}
                 required
+                title="Ingrese un correo electrónico válido"
               />
+              {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+              <Form.Text className="text-muted">
+                Ejemplo: usuario@ejemplo.com
+              </Form.Text>
             </Form.Group>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Tipo de documento</Form.Label>
+            <Form.Group className="mb-3" controlId="formTipoDoc">
+              <Form.Label>Tipo de documento *</Form.Label>
               <Form.Select
                 name="tipo_doc"
+                className={errors.tipo_doc ? 'is-invalid' : ''}
                 value={editUser.tipo_doc}
                 onChange={handleEditChange}
                 required
+                title="Seleccione su tipo de documento"
               >
                 <option value="">Seleccione un tipo de documento</option>
                 {tiposDoc.map((tipo) => (
@@ -293,9 +383,13 @@ const Perfil = ({ onClose }) => {
                   </option>
                 ))}
               </Form.Select>
+              {errors.tipo_doc && <div className="invalid-feedback">{errors.tipo_doc}</div>}
+              <Form.Text className="text-muted">
+                Seleccione su tipo de documento de identidad
+              </Form.Text>
             </Form.Group>
 
-            <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="formNumDocumento">
               <Form.Label>Número de documento</Form.Label>
               <Form.Control
                 type="text"
@@ -303,41 +397,66 @@ const Perfil = ({ onClose }) => {
                 value={editUser.num_documento}
                 onChange={handleEditChange}
                 required
-                disabled // Deshabilitado porque no debería cambiarse
+                disabled
+                title="Número de documento (no editable)"
               />
+              <Form.Text className="text-muted">
+                Este campo no se puede modificar
+              </Form.Text>
             </Form.Group>
             
-            <Form.Group className="mb-3">
-              <Form.Label>Teléfono</Form.Label>
+            <Form.Group className="mb-3" controlId="formTelefono">
+              <Form.Label>Teléfono *</Form.Label>
               <Form.Control
                 type="text"
                 name="telefono"
+                className={errors.telefono ? 'is-invalid' : ''}
                 value={editUser.telefono}
                 onChange={handleEditChange}
                 required
+                maxLength="10"
+                pattern="[0-9]{10}"
+                title="10 dígitos numéricos"
               />
+              {errors.telefono && <div className="invalid-feedback">{errors.telefono}</div>}
+              <Form.Text className="text-muted">
+                Ingrese su número de teléfono (10 dígitos)
+              </Form.Text>
             </Form.Group>
             
-            <Form.Group className="mb-3">
-              <Form.Label>Dirección</Form.Label>
+            <Form.Group className="mb-3" controlId="formDireccion">
+              <Form.Label>Dirección *</Form.Label>
               <Form.Control
                 type="text"
                 name="direccion"
+                className={errors.direccion ? 'is-invalid' : ''}
                 value={editUser.direccion}
                 onChange={handleEditChange}
                 required
+                title="Ingrese su dirección completa"
               />
+              {errors.direccion && <div className="invalid-feedback">{errors.direccion}</div>}
+              <Form.Text className="text-muted">
+                Ingrese su dirección completa (calle, número, ciudad)
+              </Form.Text>
             </Form.Group>
             
-            <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="formContrasena">
               <Form.Label>Nueva Contraseña (opcional)</Form.Label>
               <Form.Control
                 type="password"
                 name="contrasena"
+                className={errors.contrasena ? 'is-invalid' : ''}
                 value={editUser.contrasena}
                 onChange={handleEditChange}
                 placeholder="Dejar en blanco para no cambiar"
+                minLength="8"
+                title="Mínimo 8 caracteres"
               />
+              {errors.contrasena && <div className="invalid-feedback">{errors.contrasena}</div>}
+              <Form.Text className="text-muted">
+                Mínimo 8 caracteres (dejar en blanco para no cambiar)
+              </Form.Text>
             </Form.Group>
             
             <Button variant="primary" type="submit">

@@ -18,6 +18,10 @@
   padding: 0;
 }
 
+.btn-search{
+  background-color: #FFC107;
+}
+
 body {
   font-family: 'Poppins', sans-serif;
   background-color: var(--light-color);
@@ -599,4 +603,28 @@ body {
     flex-wrap: wrap;
     justify-content: center;
   }
+}
+
+/* Estilo para el botón de búsqueda */
+.search-button {
+  background-color: #fac172;
+  /* Color del fondo del botón */
+  color: white;
+  /* Color del texto del botón */
+  border: none;
+  /* Sin borde */
+  padding: 8px 16px;
+  /* Ajusta el padding */
+  border-radius: 5px;
+  /* Borde redondeado */
+  cursor: pointer;
+  /* Cursor de puntero */
+  transition: background-color 0.3s ease;
+  /* Transición suave */
+}
+
+/* Cambio de color cuando el usuario pasa el mouse sobre el botón */
+.search-button:hover {
+  background-color: #FF8357;
+  /* Color de fondo en hover */
 }

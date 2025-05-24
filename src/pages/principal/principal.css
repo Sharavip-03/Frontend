@@ -35,17 +35,29 @@ body, html {
 }
 
 /* Ajustes del Navbar para pantallas pequeñas */
-.navbar-nav {
-  flex-direction: column;
-  text-align: center;
+/* Estilos para el navbar transparente */
+.navbar-custom {
+  background-color: transparent !important;
+  transition: background-color 0.3s ease;
+  padding: 10px 0;
 }
 
-.navbar-custom11 .dropdown-menu {
-  position: static;
-  float: none;
-  width: 100%;
+/* Hero section con imagen de fondo */
+.hero-section {
+  margin-top: 80px;
+  /* Ajuste para el navbar fijo */
+  position: relative;
 }
 
+.hero-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(to right, #ff8357, #fac172, #ff8357);
+}
 .card {
   max-width: 100%; /* Ajusta el ancho de las tarjetas */
   width: 100%;
@@ -89,12 +101,6 @@ body, html {
   .navbar-nav {
     flex-direction: column;
     text-align: center;
-  }
-
-  .dropdown-menu {
-    position: static;
-    float: none;
-    width: 100%;
   }
 
   .carousel-inner {
@@ -154,24 +160,6 @@ body, html {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Estilos para el pie de página */
 footer {
   background-color: #fac172;
@@ -210,97 +198,247 @@ footer .contact-text {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Estilo del Navbar con imagen de fondo */
-.navbar-custom11 {
-  background-image: url('https://images.unsplash.com/photo-1516446589542-81d7ca527b82?q=80&w=2067&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  border-bottom: 2px solid #ddd;
-  margin-top: 150px;
-  padding: 10px 20px;
-  height: 300px; /* Altura ajustada */
-  position: relative; /* Permite a los elementos internos posicionarse dentro */
-  border-radius: 0px 0px 300px 300px;
+/* Estilos para la sección de productos en promoción */
+.promo-products-container {
+  padding: 20px;
 }
 
-/* Estilo de los elementos del menú */
-.navbar-nav {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  position: absolute;
-  bottom: 10px; /* Ubica los dropdowns en la parte inferior */
-}
-
-/* Contenedor del Dropdown */
-.dropdown {
+.promo-card {
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   position: relative;
+  overflow: hidden;
 }
 
-/* Estilo de los botones del dropdown */
-.dropdown .btn {
+.promo-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.discount-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #ff5722;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+  z-index: 1;
+}
+
+.promo-product-img {
+  height: 200px;
+  object-fit: contain;
+  padding: 20px;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #999;
+  margin-right: 10px;
+}
+
+.discount-price {
+  color: #ff5722;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  width: 5%;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  filter: invert(1);
+}
+
+@media (max-width: 768px) {
+  .promo-product-img {
+    height: 150px;
+  }
+  
+  .promo-card {
+    margin-bottom: 20px;
+  }
+}
+
+/* Estilos para la sección de categorías */
+.categories-container {
+  padding: 20px;
+}
+
+.category-card {
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.category-card .card-img-top {
+  height: 150px;
+  object-fit: contain;
+  padding: 10px;
+}
+
+/* Ajustes para el carrusel de categorías */
+.categories-container .carousel-control-prev,
+.categories-container .carousel-control-next {
+  width: 5%;
+}
+
+.categories-container .carousel-control-prev-icon,
+.categories-container .carousel-control-next-icon {
+  filter: invert(1);
+}
+
+@media (max-width: 768px) {
+  .category-card .card-img-top {
+    height: 120px;
+  }
+  
+  .categories-container .carousel-control-prev,
+  .categories-container .carousel-control-next {
+    width: 10%;
+  }
+}
+
+
+
+
+
+
+/* Estilos para la sección de marcas */
+.contenedor-marcas {
+  padding: 10px;
+  max-width: 1200px;
+  margin: 0 auto;
+  
+  align-items: center;
+  justify-content: center;
+}
+
+.marcas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.marca-item {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  text-align: center;
+}
+
+.marca-item:hover {
+  transform: translateY(-5px);
+}
+
+.marca-content {
+  background-color: white;
+  border-radius: 10px;
+  padding: 25px;
+  height: 100%;
   display: flex;
+  
   flex-direction: column;
   align-items: center;
-  background-color: transparent;
-  border: none;
-  padding: 10px;
-  transition: all 0.3s ease;
-}
-.dropdown .btn:hover{
-  background-color: transparent;
+  justify-content: space-between;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilo de las imágenes dentro del dropdown */
-.dropdown img {
-  width: 50px;
-  height: 50px;
-  transition: transform 0.3s ease;
+.marca-img-container {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
 }
 
-/* Estilo de las leyendas debajo de las imágenes */
-.caption {
-  margin-top: 5px;
-  font-size: 14px;
-  font-weight: bold;
-  color: #fac172;
+.marca-img-container img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 
-
-/* Efecto de animación sobre la imagen del botón */
-.dropdown img:hover {
-  transform: scale(1.1);
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .marcas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    padding: 10px;
+  }
+  
+  .marca-img-container {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .marca-name {
+    font-size: 0.9rem;
+  }
 }
 
-/* Estilo al pasar el ratón sobre el botón */
-.btn:hover {
-  color: #fff;
-  border-radius: 8px;
+@media (max-width: 480px) {
+  .marcas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+  }
+  
+  .marca-img-container {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .marca-name {
+    font-size: 0.8rem;
+  }
 }
 
 
 
+
+
+
+
+
+
+
+/* Imagen de fondo que cubre todo el área sin recorte visible */
+.hero-image {
+  background-image: url('https://images.unsplash.com/photo-1516446589542-81d7ca527b82?q=80&w=2067&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+  background-size: cover;
+  /* Cubre todo el espacio del contenedor */
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 100%;
+  height: 550px;
+  position: relative;
+  border-bottom: 2px solid #ddd;
+  border-radius: 0px 0px 300px 300px;
+  z-index: 0;
+}
+
+/* Navbar transparente encima */
+.navbar-custom11 {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  background: transparent;
+  z-index: 10;
+  padding: 10px 20px;
+}
 
 
 
@@ -425,3 +563,4 @@ hr.shadow {
   margin: 30px 0;
   width: 100%;
 }
+

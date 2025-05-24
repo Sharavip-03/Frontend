@@ -6,6 +6,7 @@ import Menu from '../../components/AdminNavbar/admin';
 import API_BASE_URL from '../../config/apiConfig';
 import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
 import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
+import Swal from 'sweetalert2';
 
 const AdminDescuentos = () => {
   const [descuentos, setDescuentos] = useState([]);
@@ -26,10 +27,47 @@ const AdminDescuentos = () => {
     fecha_inicio: '',
     fecha_fin: '',
   });
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!editDescuento.id_producto) {
+      newErrors.id_producto = 'Seleccione un producto';
+    } else if (isNewDescuento) {
+      // Verificar si ya existe un descuento para este producto
+      const descuentoExistente = descuentos.find(d => 
+        d.id_producto == editDescuento.id_producto
+      );
+      if (descuentoExistente) {
+        newErrors.id_producto = 'Ya existe un descuento para este producto';
+      }
+    }
+    if (!editDescuento.porcentaje_descuento || editDescuento.porcentaje_descuento <= 0) {
+      newErrors.porcentaje_descuento = 'El porcentaje debe ser mayor a 0';
+    } else if (editDescuento.porcentaje_descuento > 100) {
+      newErrors.porcentaje_descuento = 'El porcentaje no puede ser mayor a 100';
+    }
+    
+    if (editDescuento.fecha_inicio && editDescuento.fecha_fin) {
+      const fechaInicio = new Date(editDescuento.fecha_inicio);
+      const fechaFin = new Date(editDescuento.fecha_fin);
+      
+      if (fechaFin < fechaInicio) {
+        newErrors.fecha_fin = 'La fecha fin no puede ser anterior a la fecha inicio';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditDescuento({ ...editDescuento, [name]: value });
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   useEffect(() => {
@@ -51,7 +89,6 @@ const AdminDescuentos = () => {
             setLoading(true);
             const token = localStorage.getItem("token");
             
-            // Obtener detalles de la marca
             if (producto.id_marca) {
               const marcaResponse = await axios.get(`${API_BASE_URL}/PrivMarca/${producto.id_marca}`, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -59,7 +96,6 @@ const AdminDescuentos = () => {
               setMarca(marcaResponse.data.marca);
             }
             
-            // Obtener detalles de la categoría
             if (producto.id_categoria) {
               const categoriaResponse = await axios.get(`${API_BASE_URL}/categoria/${producto.id_categoria}`, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -108,7 +144,11 @@ const AdminDescuentos = () => {
       setDescuentos(descuentosConProducto);
     } catch (error) {
       console.error("Error al obtener descuentos:", error);
-      alert(`Error al cargar descuentos: ${error.response?.data?.mensaje || error.message}`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `Error al cargar descuentos: ${error.response?.data?.mensaje || error.message}`
+      });
     }
   };
 
@@ -121,7 +161,11 @@ const AdminDescuentos = () => {
       setProductos(response.data.productos || []);
     } catch (error) {
       console.error("Error al obtener los productos:", error);
-      alert(`Error al cargar productos: ${error.response?.data?.mensaje || error.message}`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `Error al cargar productos: ${error.response?.data?.mensaje || error.message}`
+      });
     }
   };
 
@@ -137,6 +181,7 @@ const AdminDescuentos = () => {
     setProductoSeleccionado(null);
     setMarca(null);
     setCategoria(null);
+    setErrors({});
     setShowModal(true);
   };
 
@@ -147,17 +192,15 @@ const AdminDescuentos = () => {
       fecha_inicio: descuento.fecha_inicio ? descuento.fecha_inicio.split('T')[0] : '',
       fecha_fin: descuento.fecha_fin ? descuento.fecha_fin.split('T')[0] : ''
     });
+    setErrors({});
     setShowModal(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+    
     try {
-      if (!editDescuento.id_producto || !editDescuento.porcentaje_descuento) {
-        alert("Producto y porcentaje son obligatorios");
-        return;
-      }
-  
       const token = localStorage.getItem("token");
       const descuentoData = {
         id_producto: Number(editDescuento.id_producto),
@@ -175,10 +218,18 @@ const AdminDescuentos = () => {
   
       if (isNewDescuento) {
         await axios.post(`${API_BASE_URL}/descuentosProd`, descuentoData, config);
-        alert('Descuento creado exitosamente');
+        Swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Descuento creado exitosamente'
+        });
       } else {
         await axios.put(`${API_BASE_URL}/descuentosProd/${editDescuento.id_descuento}`, descuentoData, config);
-        alert('Descuento actualizado exitosamente');
+        Swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Descuento actualizado exitosamente'
+        });
       }
       
       setShowModal(false);
@@ -187,7 +238,11 @@ const AdminDescuentos = () => {
       
     } catch (error) {
       console.error("Error al procesar descuento:", error);
-      alert(`Error al ${isNewDescuento ? 'crear' : 'actualizar'} descuento: ${error.response?.data?.mensaje || error.message}`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `Error al ${isNewDescuento ? 'crear' : 'actualizar'} descuento: ${error.response?.data?.mensaje || error.message}`
+      });
     }
   };
 
@@ -214,9 +269,18 @@ const AdminDescuentos = () => {
   );
 
   const handleDelete = async (id_descuento) => {
-    if (!window.confirm("¿Estás seguro de eliminar este descuento?")) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "¿Deseas eliminar este descuento?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+    
+    if (!result.isConfirmed) return;
 
     try {
       const token = localStorage.getItem("token");
@@ -226,11 +290,19 @@ const AdminDescuentos = () => {
           'Content-Type': 'application/json'
         }
       });
-      alert('Descuento eliminado exitosamente');
+      Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: 'Descuento eliminado exitosamente'
+      });
       fetchDescuentos();
     } catch (error) {
       console.error("Error al eliminar el descuento:", error);
-      alert(`Error al eliminar descuento: ${error.response?.data?.mensaje || error.message}`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `Error al eliminar descuento: ${error.response?.data?.mensaje || error.message}`
+      });
     }
   };
 
@@ -254,8 +326,8 @@ const AdminDescuentos = () => {
           <i className="bi bi-plus-circle"></i> Agregar Descuento
         </Button>
         
-        <div className="table-responsive">
-          <Table className="crud-table">
+        <div className="crud-table-container">
+        <Table className="crud-table" responsive={false}>
             <thead>
               <tr>
                 <th>ID</th>
@@ -337,72 +409,92 @@ const AdminDescuentos = () => {
           onPageChange={setCurrentPage}
         />
 
-        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" className="modal-override categoria-modal">
-          <Modal.Header closeButton>
-            <Modal.Title>{isNewDescuento ? 'Agregar Descuento' : 'Editar Descuento'}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Row>
-              <Col md={6}>
-                <Form onSubmit={handleSubmit}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Producto</Form.Label>
-                    <Form.Select
-                      name="id_producto"
-                      value={editDescuento.id_producto}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="">Seleccione un producto</option>
-                      {productos.map((producto) => (
-                        <option key={producto.id_producto} value={producto.id_producto}>
-                          {producto.nombre}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Porcentaje de Descuento</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="porcentaje_descuento"
-                      value={editDescuento.porcentaje_descuento}
-                      onChange={handleInputChange}
-                      min="1"
-                      max="100"
-                      required
-                    />
-                  </Form.Group>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Fecha Inicio</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="fecha_inicio"
-                      value={editDescuento.fecha_inicio}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </Form.Group>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Fecha Fin</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="fecha_fin"
-                      value={editDescuento.fecha_fin}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </Form.Group>
-                  <div className="d-flex justify-content-end">
-                    <Button variant="secondary" onClick={() => setShowModal(false)} className="me-2">
-                      Cancelar
-                    </Button>
-                    <Button variant="primary" type="submit" disabled={loading}>
-                      {isNewDescuento ? 'Crear Descuento' : 'Guardar Cambios'}
-                    </Button>
-                  </div>
-                </Form>
-              </Col>
+<Modal show={showModal} onHide={() => setShowModal(false)} size="lg" className="modal-override categoria-modal">
+  <Modal.Header closeButton>
+    <Modal.Title>{isNewDescuento ? 'Agregar Descuento' : 'Editar Descuento'}</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    <Row>
+      <Col md={6}>
+        <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3" controlId="formProductoDescuento">
+            <Form.Label>Producto *</Form.Label>
+            <Form.Select
+              name="id_producto"
+              className={errors.id_producto ? 'is-invalid' : ''}
+              value={editDescuento.id_producto}
+              onChange={handleInputChange}
+              required
+              title="Seleccione un producto para aplicar el descuento. Campo obligatorio."
+            >
+              <option value="">Seleccione un producto</option>
+              {productos.map((producto) => (
+                <option key={producto.id_producto} value={producto.id_producto}>
+                  {producto.nombre}
+                </option>
+              ))}
+            </Form.Select>
+            {errors.id_producto && <div className="invalid-feedback">{errors.id_producto}</div>}
+            <Form.Text className="text-muted">
+              Seleccione el producto al que aplicará el descuento. Campo obligatorio.
+            </Form.Text>
+          </Form.Group>
+          <Form.Group className="mb-3" controlId="formPorcentajeDescuento">
+            <Form.Label>Porcentaje de Descuento *</Form.Label>
+            <Form.Control
+              type="number"
+              name="porcentaje_descuento"
+              className={errors.porcentaje_descuento ? 'is-invalid' : ''}
+              value={editDescuento.porcentaje_descuento}
+              onChange={handleInputChange}
+              min="1"
+              max="100"
+              required
+              title="Valor entre 1 y 100%. Campo obligatorio."
+            />
+            {errors.porcentaje_descuento && <div className="invalid-feedback">{errors.porcentaje_descuento}</div>}
+            <Form.Text className="text-muted">
+              Porcentaje de descuento (entre 1 y 100%). Campo obligatorio.
+            </Form.Text>
+          </Form.Group>
+          <Form.Group className="mb-3" controlId="formFechaInicio">
+            <Form.Label>Fecha Inicio</Form.Label>
+            <Form.Control
+              type="date"
+              name="fecha_inicio"
+              value={editDescuento.fecha_inicio}
+              onChange={handleInputChange}
+              title="Fecha de inicio del descuento (opcional)."
+            />
+            <Form.Text className="text-muted">
+              Fecha de inicio del descuento (opcional).
+            </Form.Text>
+          </Form.Group>
+          <Form.Group className="mb-3" controlId="formFechaFin">
+            <Form.Label>Fecha Fin</Form.Label>
+            <Form.Control
+              type="date"
+              name="fecha_fin"
+              className={errors.fecha_fin ? 'is-invalid' : ''}
+              value={editDescuento.fecha_fin}
+              onChange={handleInputChange}
+              title="Fecha de finalización del descuento (opcional). No puede ser anterior a la fecha de inicio."
+            />
+            {errors.fecha_fin && <div className="invalid-feedback">{errors.fecha_fin}</div>}
+            <Form.Text className="text-muted">
+              Fecha de finalización del descuento (opcional). No puede ser anterior a la fecha de inicio.
+            </Form.Text>
+          </Form.Group>
+          <div className="d-flex justify-content-end">
+            <Button variant="secondary" onClick={() => setShowModal(false)} className="me-2">
+              Cancelar
+            </Button>
+            <Button variant="primary" type="submit" disabled={loading}>
+              {isNewDescuento ? 'Crear Descuento' : 'Guardar Cambios'}
+            </Button>
+          </div>
+        </Form>
+      </Col>
               <Col md={6}>
                 {loading ? (
                   <div className="d-flex justify-content-center align-items-center h-100">

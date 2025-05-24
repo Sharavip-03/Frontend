@@ -18,10 +18,20 @@ const DashboardPreview = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
         const [ventasRes, productosRes, usuariosRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/reportes/ventas?limit=7`),
-          axios.get(`${API_BASE_URL}/api/reportes/productos?limit=3`),
-          axios.get(`${API_BASE_URL}/api/reportes/usuarios`)
+          axios.get(`${API_BASE_URL}/api/reportes/ventas?limit=7`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          
+          axios.get(`${API_BASE_URL}/api/reportes/productos?limit=3`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          
+          axios.get(`${API_BASE_URL}/api/reportes/usuarios`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        
         ]);
 
         setData({

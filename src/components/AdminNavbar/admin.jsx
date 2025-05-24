@@ -45,13 +45,16 @@ const Menu = () => {
 
   return (
     <>
-      {isMobile && (
+    {isMobile && (
+      <>
         <button className="menu-button" onClick={() => setIsMenuOpen(!isMenuOpen)}>
           <FaBars />
         </button>
-      )}
+        {isMenuOpen && <div className="sidebar-overlay" onClick={() => setIsMenuOpen(false)} />}
+      </>
+    )}
 
-      <div className={`sidebar ${isMobile && isMenuOpen ? "open" : ""}`}>
+    <div className={`sidebar ${isMobile && isMenuOpen ? "open" : ""}`}>
         {!isMobile && (
           <div className="sidebar-logo">
             <img src={logo} alt="Logo" />

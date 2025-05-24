@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
+
 export const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export const SearchBar = () => {
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-      <Button variant="outline-light" className="btn-search" type="submit">
+      <Button variant="outline-secondary" className="search-button" type="submit">
         Buscar
       </Button>
     </Form>

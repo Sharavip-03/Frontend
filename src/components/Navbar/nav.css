@@ -1,0 +1,68 @@
+/* Estilos base del navbar */
+.navbar-custom {
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  background-color: transparent;
+  box-shadow: none;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  z-index: 1050;
+  /* para que quede encima */
+}
+
+.navbar-scrolled {
+  background-color: #fac172 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Estilos cuando se hace scroll */
+.navbar-custom.navbar-scrolled {
+  background-color: #FF8357;
+  /* color naranja */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Íconos de perfil y carrito */
+.navbar-custom .auth-links svg {
+  color: #FF8357;
+  /* Color inicial */
+  transition: color 0.3s ease;
+}
+
+/* Cuando se hace scroll, los iconos cambian de color */
+.navbar-custom.navbar-scrolled .auth-links svg {
+  color: #FF8357;
+  /* Cambia el color a blanco cuando se hace scroll */
+}
+
+
+/* Estilos cuando no hay scroll */
+.navbar-link.default {
+  background-color: transparent;
+  /* Fondo transparente cuando no hay scroll */
+}
+
+/* Botones en auth-links */
+.auth-links button {
+  cursor: pointer;
+}
+
+/* Estilo para el contenedor del botón de búsqueda */
+.navbar-custom .search-button {
+  background-color: #fac172;
+  /* Color del botón de búsqueda */
+  border-radius: 5px;
+  /* Borde redondeado */
+  padding: 8px 12px;
+  /* Espaciado del botón */
+  cursor: pointer;
+  /* Asegura que el cursor cambie a puntero */
+  transition: background-color 0.3s ease;
+  /* Transición suave */
+}
+
+.navbar-custom .search-button:hover {
+  background-color: #FF8357;
+  /* Cambia el color al pasar el ratón */
+}
+/* Links del navbar */
+

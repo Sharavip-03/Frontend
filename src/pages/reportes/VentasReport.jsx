@@ -20,12 +20,14 @@ const VentasReport = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
         setLoading(true);
         const response = await axios.get(`${API_BASE_URL}/api/reportes/ventas`, {
           params: {
             start: startDate.toISOString().split("T")[0],
             end: endDate.toISOString().split("T")[0]
-          }
+          },
+          headers: { Authorization: `Bearer ${token}` }
         });
         setData(response.data);
       } catch (error) {

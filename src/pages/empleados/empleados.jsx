@@ -220,7 +220,8 @@ const AdminEmpleados = () => {
           Agregar Empleado
         </Button>
 
-        <Table className="crud-table" striped bordered hover responsive>
+        <div className="crud-table-container">
+        <Table className="crud-table" responsive={false}>
           <thead>
             <tr>
               <th>ID</th>
@@ -275,6 +276,7 @@ const AdminEmpleados = () => {
             )}
           </tbody>
         </Table>
+        </div>
 
         <PaginationComponent 
           data={filteredData}

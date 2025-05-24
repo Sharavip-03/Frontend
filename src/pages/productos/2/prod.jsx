@@ -1,40 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Row, Col } from 'react-bootstrap';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { Table, Button, Modal, Form, Row, Col, Spinner, Badge } from "react-bootstrap";
+import axios from "axios";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import Menu from "../../../components/AdminNavbar/admin";
+import API_BASE_URL from "../../../config/apiConfig";
+import { SearchComponent } from "../../buscador/ParaCruds/SearchComponent";
+import { PaginationComponent } from "../../buscador/ParaCruds/PaginationComponent";
 import Swal from 'sweetalert2';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import Menu from '../../../components/AdminNavbar/admin';
-import { Badge } from 'react-bootstrap';
-import API_BASE_URL from '../../../config/apiConfig';
-import { SearchComponent } from '../../buscador/ParaCruds/SearchComponent';
-import { PaginationComponent } from '../../buscador/ParaCruds/PaginationComponent';
 
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
-
-const api = axios.create({
-  baseURL: API_BASE_URL
-});
-
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-}, error => {
-  return Promise.reject(error);
-});
-
-axios.interceptors.response.use(response => response, error => {
-  if (error.response?.status === 401) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("id");
-    localStorage.removeItem("isLogged");
-    window.location.href = "/";
-  }
-  return Promise.reject(error);
-});
 
 const AdminProductos = () => {
   const { idAnimal } = useParams();
@@ -61,6 +36,8 @@ const AdminProductos = () => {
     id_marca: '',
     id_animal: idAnimal || location.state?.idAnimalSeleccionado || ''
   });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (idAnimal || location.state?.idAnimalSeleccionado) {
@@ -71,26 +48,68 @@ const AdminProductos = () => {
     }
   }, [idAnimal, location.state?.idAnimalSeleccionado]);
 
-    useEffect(() => {
-      setFilteredData(productos);
-    }, [productos]);
+  useEffect(() => {
+    setFilteredData(productos);
+  }, [productos]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!editProducto.nombre.trim()) {
+      newErrors.nombre = 'El nombre es requerido';
+    } else if (editProducto.nombre.length < 2 || editProducto.nombre.length > 100) {
+      newErrors.nombre = 'El nombre debe tener entre 2 y 100 caracteres';
+    }
+    
+    if (!editProducto.precio || editProducto.precio <= 0) {
+      newErrors.precio = 'El precio debe ser mayor a 0';
+    }
+    
+    if (!editProducto.stock || editProducto.stock < 0) {
+      newErrors.stock = 'El stock no puede ser negativo';
+    }
+    
+    if (!editProducto.id_categoria) {
+      newErrors.id_categoria = 'Seleccione una categoría';
+    }
+    
+    if (!editProducto.id_marca) {
+      newErrors.id_marca = 'Seleccione una marca';
+    }
+    
+    if (!editProducto.id_animal) {
+      newErrors.id_animal = 'Seleccione un animal';
+    }
+    
+    if (editProducto.descripcion && editProducto.descripcion.length > 500) {
+      newErrors.descripcion = 'La descripción no puede exceder 500 caracteres';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const fetchAnimal = async () => {
     try {
       const animalId = idAnimal || location.state?.idAnimalSeleccionado;
       const response = await axios.get(`${API_BASE_URL}/animalesProd/${animalId}`);
-      console.log("Respuesta del animal:", response.data); // Agrega esto
       setAnimal(response.data);
     } catch (error) {
       console.error("Error al obtener el animal:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al cargar el animal'
+      });
     }
   };
+
   const fetchProductos = async () => {
     try {
+      setLoading(true);
       const response = await axios.get(`${API_BASE_URL}/PrivProd`);
       const animalId = idAnimal || location.state?.idAnimalSeleccionado;
       
-      // Filtrado seguro con conversión a número
       const productosFiltrados = response.data.productos.filter(p => 
         parseInt(p.id_animal) === parseInt(animalId)
       );
@@ -103,9 +122,10 @@ const AdminProductos = () => {
         title: "Error",
         text: "No se pudieron cargar los productos"
       });
+    } finally {
+      setLoading(false);
     }
   };
-
 
   const fetchCategorias = async () => {
     try {
@@ -113,6 +133,11 @@ const AdminProductos = () => {
       setCategorias(response.data.categorias || []);
     } catch (error) {
       console.error("Error al obtener las categorías:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al cargar las categorías'
+      });
     }
   };
 
@@ -122,6 +147,11 @@ const AdminProductos = () => {
       setMarcas(response.data.marcas || []);
     } catch (error) {
       console.error("Error al obtener las marcas:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al cargar las marcas'
+      });
     }
   };
 
@@ -139,39 +169,35 @@ const AdminProductos = () => {
       id_marca: '', 
       id_animal: idAnimal || location.state?.idAnimalSeleccionado 
     });
+    setErrors({});
     setShowModal(true);
   };
 
   const handleEditProducto = (producto) => {
     setIsNewProducto(false);
     setEditProducto({ ...producto });
+    setErrors({});
     setShowModal(true);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditProducto({ ...editProducto, [name]: value });
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-
-  const handleSubmit = async () => {
-    if (!editProducto.nombre || !editProducto.precio || !editProducto.stock || 
-        !editProducto.id_categoria || !editProducto.id_marca || !editProducto.id_animal) {
-      Swal.fire({
-        icon: "warning",
-        title: "Campos incompletos",
-        text: "Por favor complete todos los campos requeridos",
-      });
-      return;
-    }
-  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
       
-      // Agregar todos los campos al FormData
       formData.append('nombre', editProducto.nombre);
-      formData.append('descripcion', editProducto.descripcion);
+      formData.append('descripcion', editProducto.descripcion || '');
       formData.append('precio', editProducto.precio);
       formData.append('stock', editProducto.stock);
       formData.append('estado', editProducto.estado);
@@ -179,11 +205,10 @@ const AdminProductos = () => {
       formData.append('id_marca', editProducto.id_marca);
       formData.append('id_animal', editProducto.id_animal);
       
-      // Si hay una imagen nueva (para edición)
       if (editProducto.imagenFile) {
         formData.append('imagen', editProducto.imagenFile);
       }
-  
+
       const config = {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -193,19 +218,22 @@ const AdminProductos = () => {
   
       if (isNewProducto) {
         await axios.post(`${API_BASE_URL}/PrivProd`, formData, config);
+        Swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Producto creado exitosamente'
+        });
       } else {
         await axios.put(`${API_BASE_URL}/PrivProd/${editProducto.id_producto}`, formData, config);
+        Swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Producto actualizado exitosamente'
+        });
       }
       
       setShowModal(false);
       fetchProductos();
-      
-      Swal.fire({
-        icon: "success",
-        title: "Operación exitosa",
-        showConfirmButton: false,
-        timer: 1500,
-      });
     } catch (error) {
       console.error("Error al guardar el producto:", error);
       Swal.fire({
@@ -225,9 +253,8 @@ const AdminProductos = () => {
     formData.append("upload_preset", cloudinaryPreset);
   
     try {
-      // Crear una nueva instancia de axios sin interceptores para esta solicitud
-      const cloudinaryAxios = axios.create();
-      const response = await cloudinaryAxios.post(cloudinaryUploadUrl, formData, {
+      setLoading(true);
+      const response = await axios.post(cloudinaryUploadUrl, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -246,8 +273,11 @@ const AdminProductos = () => {
         title: "Error",
         text: "Error al subir la imagen. Por favor intenta con otra imagen.",
       });
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
     <div className="admin-container">
       <Menu />
@@ -264,11 +294,12 @@ const AdminProductos = () => {
           variant="primary" 
           className="mb-3" 
           onClick={handleAddProducto}
-          disabled={!idAnimal && !location.state?.idAnimalSeleccionado}
+          disabled={!idAnimal && !location.state?.idAnimalSeleccionado || loading}
         >
-          Agregar Producto
+          {loading ? <Spinner size="sm" /> : 'Agregar Producto'}
         </Button>
-        <Table className="crud-table" striped bordered hover responsive>
+        <div className="crud-table-container">
+        <Table className="crud-table" responsive={false}>
           <thead>
             <tr>
               <th>ID</th>
@@ -285,7 +316,13 @@ const AdminProductos = () => {
             </tr>
           </thead>
           <tbody>
-          {filteredData.length > 0 ? (
+          {loading ? (
+            <tr>
+              <td colSpan="11" className="text-center">
+                <Spinner animation="border" variant="primary" />
+              </td>
+            </tr>
+          ) : filteredData.length > 0 ? (
               filteredData
                 .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                 .map((producto) => (
@@ -342,7 +379,7 @@ const AdminProductos = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="10" className="text-center">
+                <td colSpan="11" className="text-center">
                   No hay productos disponibles. {idAnimal || location.state?.idAnimalSeleccionado ? 
                   "Puedes agregar uno nuevo usando el botón 'Agregar Producto'" : 
                   "Selecciona un animal para ver sus productos"}
@@ -351,7 +388,7 @@ const AdminProductos = () => {
             )}
           </tbody>
         </Table>
-
+        </div>
 
         <PaginationComponent 
           data={filteredData}
@@ -360,129 +397,193 @@ const AdminProductos = () => {
           setCurrentPage={setCurrentPage}
         />
 
-        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" className="modal-override categoria-modal">
-          <Modal.Header closeButton>
-            <Modal.Title>{isNewProducto ? 'Agregar Producto' : 'Editar Producto'}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form>
-              {/* Campos del formulario */}
-              <Form.Group className="mb-3">
-                <Form.Label>Nombre *</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  name="nombre" 
-                  value={editProducto.nombre} 
-                  onChange={handleInputChange} 
-                  required 
-                />
-              </Form.Group>
-              
-              <Form.Group className="mb-3">
-                <Form.Label>Descripción</Form.Label>
-                <Form.Control 
-                  as="textarea" 
-                  rows={3}
-                  name="descripcion" 
-                  value={editProducto.descripcion} 
-                  onChange={handleInputChange} 
-                />
-              </Form.Group>
-              
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Precio *</Form.Label>
-                    <Form.Control 
-                      type="number" 
-                      name="precio" 
-                      value={editProducto.precio} 
-                      onChange={handleInputChange} 
-                      required 
-                      min="0"
-                      step="0.01"
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Stock *</Form.Label>
-                    <Form.Control 
-                      type="number" 
-                      name="stock" 
-                      value={editProducto.stock} 
-                      onChange={handleInputChange} 
-                      required 
-                      min="0"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-              
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Categoría *</Form.Label>
-                    <Form.Select 
-                      name="id_categoria" 
-                      value={editProducto.id_categoria} 
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="">Seleccionar Categoría</option>
-                      {categorias.map(cat => (
-                        <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre}</option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Marca *</Form.Label>
-                    <Form.Select 
-                      name="id_marca" 
-                      value={editProducto.id_marca} 
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="">Seleccionar Marca</option>
-                      {marcas.map(marca => (
-                        <option key={marca.id_marca} value={marca.id_marca}>{marca.nombre}</option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-              </Row>
-              
-              <Form.Group className="mb-3">
-                <Form.Label>Imagen</Form.Label>
-                <Form.Control 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleImageUpload} 
-                />
-                {editProducto.imagen && (
-                  <div className="mt-2">
-                    <img 
-                      src={editProducto.imagen} 
-                      alt="Vista previa" 
-                      style={{ width: "100px", height: "auto" }} 
-                      className="img-thumbnail"
-                    />
-                  </div>
-                )}
-              </Form.Group>
-            </Form>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Cancelar
-            </Button>
-            <Button variant="primary" onClick={handleSubmit}>
-              {isNewProducto ? 'Agregar' : 'Guardar Cambios'}
-            </Button>
-          </Modal.Footer>
-        </Modal>
+<Modal show={showModal} onHide={() => setShowModal(false)} size="lg" className="modal-override categoria-modal">
+  <Modal.Header closeButton>
+    <Modal.Title>{isNewProducto ? 'Agregar Producto' : 'Editar Producto'}</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    <Form onSubmit={handleSubmit}>
+      <Form.Group className="mb-3" controlId="formNombreProducto">
+        <Form.Label>Nombre *</Form.Label>
+        <Form.Control 
+          type="text" 
+          name="nombre" 
+          className={errors.nombre ? 'is-invalid' : ''}
+          value={editProducto.nombre} 
+          onChange={handleInputChange} 
+          required
+          title="Entre 2 y 100 caracteres. Campo obligatorio."
+        />
+        {errors.nombre && <div className="invalid-feedback">{errors.nombre}</div>}
+        <Form.Text className="text-muted">
+          Nombre del producto (entre 2 y 100 caracteres). Campo obligatorio.
+        </Form.Text>
+      </Form.Group>
+      
+      <Form.Group className="mb-3" controlId="formDescripcion">
+        <Form.Label>Descripción</Form.Label>
+        <Form.Control 
+          as="textarea" 
+          rows={3}
+          name="descripcion" 
+          className={errors.descripcion ? 'is-invalid' : ''}
+          value={editProducto.descripcion} 
+          onChange={handleInputChange} 
+          maxLength="500"
+          title="Máximo 500 caracteres."
+        />
+        {errors.descripcion && <div className="invalid-feedback">{errors.descripcion}</div>}
+        <Form.Text className="text-muted">
+          Descripción detallada del producto (máximo 500 caracteres).
+        </Form.Text>
+      </Form.Group>
+      
+      <Row>
+        <Col md={6}>
+          <Form.Group className="mb-3" controlId="formPrecio">
+            <Form.Label>Precio *</Form.Label>
+            <Form.Control 
+              type="number" 
+              name="precio" 
+              className={errors.precio ? 'is-invalid' : ''}
+              value={editProducto.precio} 
+              onChange={handleInputChange} 
+              required 
+              min="0"
+              step="0.01"
+              title="Debe ser mayor a 0. Campo obligatorio."
+            />
+            {errors.precio && <div className="invalid-feedback">{errors.precio}</div>}
+            <Form.Text className="text-muted">
+              Precio del producto (mayor a 0). Campo obligatorio.
+            </Form.Text>
+          </Form.Group>
+        </Col>
+        <Col md={6}>
+          <Form.Group className="mb-3" controlId="formStock">
+            <Form.Label>Stock *</Form.Label>
+            <Form.Control 
+              type="number" 
+              name="stock" 
+              className={errors.stock ? 'is-invalid' : ''}
+              value={editProducto.stock} 
+              onChange={handleInputChange} 
+              required 
+              min="0"
+              title="No puede ser negativo. Campo obligatorio."
+            />
+            {errors.stock && <div className="invalid-feedback">{errors.stock}</div>}
+            <Form.Text className="text-muted">
+              Cantidad disponible en inventario (no negativo). Campo obligatorio.
+            </Form.Text>
+          </Form.Group>
+        </Col>
+      </Row>
+      
+      <Row>
+        <Col md={6}>
+          <Form.Group className="mb-3" controlId="formCategoria">
+            <Form.Label>Categoría *</Form.Label>
+            <Form.Select 
+              name="id_categoria" 
+              className={errors.id_categoria ? 'is-invalid' : ''}
+              value={editProducto.id_categoria} 
+              onChange={handleInputChange}
+              required
+              title="Seleccione una categoría. Campo obligatorio."
+            >
+              <option value="">Seleccionar Categoría</option>
+              {categorias.map(cat => (
+                <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre}</option>
+              ))}
+            </Form.Select>
+            {errors.id_categoria && <div className="invalid-feedback">{errors.id_categoria}</div>}
+            <Form.Text className="text-muted">
+              Seleccione la categoría a la que pertenece el producto. Campo obligatorio.
+            </Form.Text>
+          </Form.Group>
+        </Col>
+        <Col md={6}>
+          <Form.Group className="mb-3" controlId="formMarca">
+            <Form.Label>Marca *</Form.Label>
+            <Form.Select 
+              name="id_marca" 
+              className={errors.id_marca ? 'is-invalid' : ''}
+              value={editProducto.id_marca} 
+              onChange={handleInputChange}
+              required
+              title="Seleccione una marca. Campo obligatorio."
+            >
+              <option value="">Seleccionar Marca</option>
+              {marcas.map(marca => (
+                <option key={marca.id_marca} value={marca.id_marca}>{marca.nombre}</option>
+              ))}
+            </Form.Select>
+            {errors.id_marca && <div className="invalid-feedback">{errors.id_marca}</div>}
+            <Form.Text className="text-muted">
+              Seleccione la marca del producto. Campo obligatorio.
+            </Form.Text>
+          </Form.Group>
+        </Col>
+      </Row>
+      
+      <Form.Group className="mb-3" controlId="formEstado">
+        <Form.Label>Estado</Form.Label>
+        <Form.Select
+          name="estado"
+          value={editProducto.estado}
+          onChange={handleInputChange}
+          title="Seleccione el estado del producto."
+        >
+          <option value="Disponible">Disponible</option>
+          <option value="Agotado">Agotado</option>
+          <option value="Descontinuado">Descontinuado</option>
+        </Form.Select>
+        <Form.Text className="text-muted">
+          Estado actual del producto en el inventario.
+        </Form.Text>
+      </Form.Group>
+      
+      <Form.Group className="mb-3" controlId="formImagen">
+        <Form.Label>Imagen</Form.Label>
+        <Form.Control 
+          type="file" 
+          accept="image/*" 
+          onChange={handleImageUpload} 
+          disabled={loading}
+          title="Suba una imagen del producto (opcional). Formatos aceptados: JPG, PNG, etc."
+        />
+        {editProducto.imagen && (
+          <div className="mt-2">
+            <img 
+              src={editProducto.imagen} 
+              alt="Vista previa" 
+              style={{ width: "100px", height: "auto" }} 
+              className="img-thumbnail"
+            />
+          </div>
+        )}
+        <Form.Text className="text-muted">
+          Imagen representativa del producto (formatos: JPG, PNG, etc.).
+        </Form.Text>
+      </Form.Group>
+    </Form>
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setShowModal(false)} disabled={loading}>
+      Cancelar
+    </Button>
+    <Button variant="primary" onClick={handleSubmit} disabled={loading}>
+      {loading ? (
+        <Spinner animation="border" size="sm" />
+      ) : isNewProducto ? (
+        'Agregar'
+      ) : (
+        'Guardar Cambios'
+      )}
+    </Button>
+  </Modal.Footer>
+</Modal>
       </div>
     </div>
   );

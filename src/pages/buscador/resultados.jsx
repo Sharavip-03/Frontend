@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Container, Row, Col, Card, Button, Form, Navbar, Offcanvas, Pagination } from "react-bootstrap";
 import axios from "axios";
+import API_BASE_URL from '../../config/apiConfig';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -13,10 +14,12 @@ const SearchResults = () => {
     const navigate = useNavigate();
     const queryParams = new URLSearchParams(location.search);
     const searchQuery = queryParams.get("query") || "";
+
+    const [products, setProducts] = useState(location.state?.filteredProducts || []);
+    const [loading, setLoading] = useState(!location.state?.filteredProducts);
+    const [error, setError] = useState(location.state?.error || null);
+    const [searchTitle, setSearchTitle] = useState(location.state?.searchTitle || "");
     
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     
     // Filtros
     const [categoryFilter, setCategoryFilter] = useState("");
@@ -36,7 +39,6 @@ const SearchResults = () => {
     const [brands, setBrands] = useState([]);
     const [animals, setAnimals] = useState([]);
 
-    const urlAPI = 'http://127.0.0.1:5000';
     const [cartItems, setCartItems] = useState([]);
 
     const addToCart = async (product) => {
@@ -47,7 +49,7 @@ const SearchResults = () => {
                 return;
             }
 
-            const response = await axios.post(`${urlAPI}/Carrito/agregar`, {
+            const response = await axios.post(`${API_BASE_URL}/Carrito/agregar`, {
                 id_usuario: localStorage.getItem('id'),
                 id_producto: product.id_producto,
                 cantidad: 1
@@ -88,6 +90,12 @@ const SearchResults = () => {
     };
 
     useEffect(() => {
+        // Si ya tenemos productos filtrados (venimos de Principal), no hacemos fetch
+        if (location.state?.filteredProducts) {
+            setLoading(false);
+            return;
+        }
+
         const fetchData = async () => {
           try {
             setLoading(true);
@@ -97,7 +105,7 @@ const SearchResults = () => {
             
             if (category) {
               const res = await axios.get(
-                `${urlAPI}/productos/categoria/${encodeURIComponent(category)}`
+                `${API_BASE_URL}/productos/categoria/${encodeURIComponent(category)}`
               );
               
               if (Array.isArray(res.data)) {
@@ -107,14 +115,14 @@ const SearchResults = () => {
                 productsData = [];
               }
             } else {
-              const res = await axios.get(`${urlAPI}/PrivProd`);
+              const res = await axios.get(`${API_BASE_URL}/PrivProd`);
               productsData = res.data?.productos || [];
             }
             
             const [categoriesRes, brandsRes, animalsRes] = await Promise.all([
-              axios.get(`${urlAPI}/categoria`),
-              axios.get(`${urlAPI}/PrivMarcas`),
-              axios.get(`${urlAPI}/animalesProd`)
+              axios.get(`${API_BASE_URL}/categoria`),
+              axios.get(`${API_BASE_URL}/PrivMarcas`),
+              axios.get(`${API_BASE_URL}/animalesProd`)
             ]);
             
             setProducts(productsData);
@@ -138,7 +146,7 @@ const SearchResults = () => {
         };
         
         fetchData();
-      }, [searchQuery, location.search]);
+    }, [searchQuery, location.search, location.state]);
       
     const filteredProducts = useMemo(() => {
         let result = searchProducts(products, searchQuery);
@@ -318,7 +326,7 @@ const SearchResults = () => {
                 {/* Resultados de búsqueda */}
                 <div className="search-results-area">
                     <h2 className="results-title">
-                        {searchQuery ? `Resultados para "${searchQuery}"` : "Todos los productos"}
+                        {searchTitle || (searchQuery ? `Resultados para "${searchQuery}"` : "Todos los productos")}
                         <span>{filteredProducts.length} producto(s) encontrado(s)</span>
                     </h2>
                     

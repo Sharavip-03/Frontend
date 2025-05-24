@@ -166,7 +166,8 @@ const AdminProveedores = () => {
           Agregar Proveedor
         </Button>
 
-        <Table className="crud-table" striped bordered hover responsive>
+        <div className="crud-table-container">
+        <Table className="crud-table" responsive={false}>
           <thead>
             <tr>
               <th>ID</th>
@@ -213,6 +214,7 @@ const AdminProveedores = () => {
             )}
           </tbody>
         </Table>
+        </div>
         
         <PaginationComponent 
           data={filteredData}
