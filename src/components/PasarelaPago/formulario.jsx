@@ -347,7 +347,9 @@ const FormularioPago = () => {
                                             <FaMoneyBillWave className="me-2" size={24} />
                                             <div>
                                                 <strong>Pago en efectivo</strong><br />
-                                                Al seleccionar esta opción, deberás acercarte a una de nuestras sucursales para completar el pago.
+                                                Al seleccionar esta opción, deberás acercarte a nuestra tienda para completar el pago.<br />
+                                                <strong>Dirección: Carrera 123</strong><br />
+
                                             </div>
                                         </Alert>
                                     )}
@@ -358,7 +360,7 @@ const FormularioPago = () => {
                                             <div>
                                                 <strong>Transferencia bancaria</strong><br />
                                                 Por favor realiza la transferencia a la siguiente cuenta:<br />
-                                                Banco: TuBanco<br />
+                                                Banco: Banco123<br />
                                                 Cuenta: 123456789<br />
                                                 CLAVE: 012345678912345678<br />
                                                 A nombre de: El Escondite Animal<br />
