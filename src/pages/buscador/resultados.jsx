@@ -20,7 +20,6 @@ const SearchResults = () => {
     const [error, setError] = useState(location.state?.error || null);
     const [searchTitle, setSearchTitle] = useState(location.state?.searchTitle || "");
     
-    
     // Filtros
     const [categoryFilter, setCategoryFilter] = useState("");
     const [brandFilter, setBrandFilter] = useState("");
@@ -42,10 +41,41 @@ const SearchResults = () => {
     const [cartItems, setCartItems] = useState([]);
 
     const addToCart = async (product) => {
+        // Verificar si el producto está disponible
+        if (product.estado !== 'Disponible') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Producto no disponible',
+                text: 'Este producto no está disponible para agregar al carrito'
+            });
+            return;
+        }
+
+        // Verificar stock
+        if (product.stock <= 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Producto agotado',
+                text: 'No hay stock disponible de este producto'
+            });
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                alert("Por favor inicia sesión para agregar productos al carrito");
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Inicia sesión',
+                    text: 'Por favor inicia sesión para agregar productos al carrito',
+                    showCancelButton: true,
+                    confirmButtonText: 'Iniciar sesión',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        navigate('/login');
+                    }
+                });
                 return;
             }
 
@@ -72,10 +102,20 @@ const SearchResults = () => {
                 }
             });
 
-            alert("Producto agregado al carrito");
+            Swal.fire({
+                icon: 'success',
+                title: '¡Producto agregado!',
+                text: 'El producto ha sido añadido a tu carrito',
+                timer: 1500,
+                showConfirmButton: false
+            });
         } catch (error) {
             console.error("Error al agregar al carrito:", error);
-            alert("Error al agregar producto al carrito");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.mensaje || 'Error al agregar producto al carrito'
+            });
         }
     };
 
@@ -351,8 +391,10 @@ const SearchResults = () => {
                                                 {Math.round(100 - (product.precio_descuento * 100 / product.precio))}% OFF
                                             </div>
                                         )}
-                                        {product.stock <= 0 && (
-                                            <div className="sold-out-badge">AGOTADO</div>
+                                        {product.estado !== 'Disponible' && (
+                                            <div className={`status-badge ${product.estado === 'Agotado' ? 'sold-out' : 'discontinued'}`}>
+                                                {product.estado.toUpperCase()}
+                                            </div>
                                         )}
                                         <div className="product-image-container">
                                             <img 
@@ -395,7 +437,9 @@ const SearchResults = () => {
                                                 <button 
                                                     onClick={() => addToCart(product)}
                                                     className="cart-button"
-                                                    disabled={product.stock <= 0}
+                                                    disabled={product.estado !== 'Disponible' || product.stock <= 0}
+                                                    title={product.estado !== 'Disponible' ? 'Producto no disponible' : 
+                                                          product.stock <= 0 ? 'Producto agotado' : 'Agregar al carrito'}
                                                 >
                                                     <ShoppingCartIcon />
                                                 </button>

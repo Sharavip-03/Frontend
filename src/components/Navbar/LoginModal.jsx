@@ -79,7 +79,7 @@ const LoginModal = ({ show, handleClose }) => {
         handleClose();
 
         if (userRole === 1) navigate("/admin/dashboard");
-        else if (userRole === 3) navigate("/admin/menu");
+        else if (userRole === 3) navigate("/empleado/dashboard");
         else navigate("/");
       }
     } catch (error) {

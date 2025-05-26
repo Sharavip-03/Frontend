@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import './animales.css';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
-import Menu from '../../components/AdminNavbar/admin';
-import API_BASE_URL from '../../config/apiConfig';
-import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
-import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
+import MenuEmp from '../../../components/AdminNavbar/empleado';
+import API_BASE_URL from '../../../config/apiConfig';
+import { SearchComponent } from '../../buscador/ParaCruds/SearchComponent';
+import { PaginationComponent } from '../../buscador/ParaCruds/PaginationComponent';
 import Swal from 'sweetalert2';
 
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
 
-const AdminAnimales = () => {
+const EmpAnimales = () => {
   const [animales, setAnimales] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,45 +85,6 @@ const AdminAnimales = () => {
     setEditAnimal({ ...animal });
     setErrors({});
     setShowModal(true);
-  };
-
-  const handleDeleteAnimal = async (id_animal) => {
-    const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: "¡No podrás revertir esto!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
-    });
-
-    if (!result.isConfirmed) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/animalesProd/${id_animal}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      Swal.fire(
-        '¡Eliminado!',
-        'El animal ha sido eliminado.',
-        'success'
-      );
-
-      fetchAnimales();
-    } catch (error) {
-      console.error("Error al eliminar el animal:", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: error.response?.data?.mensaje || 'Error al eliminar el animal'
-      });
-    }
   };
 
   const handleInputChange = (e) => {
@@ -208,9 +169,57 @@ const AdminAnimales = () => {
     }
   };
 
+  const handleStatusChange = async (id_animal, estadoActual) => {
+    const result = await Swal.fire({
+      title: `¿Estás seguro?`,
+      text: `¿Deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} este animal?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí',
+      cancelButtonText: 'Cancelar'
+    });
+    
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const nuevoEstado = estadoActual === 'Activo' ? 'Inactivo' : 'Activo';
+
+      await axios.patch(
+        `${API_BASE_URL}/animalesProd/${id_animal}`, 
+        { estado: nuevoEstado }, 
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+
+      setAnimales(prevAnimales => 
+        prevAnimales.map(animal => 
+          animal.id_animal === id_animal 
+            ? { ...animal, estado: nuevoEstado }
+            : animal
+        )
+      );
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: `Animal ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'} exitosamente`
+      });
+    } catch (error) {
+      console.error("Error al cambiar el estado:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `Error al cambiar estado: ${error.response?.data?.mensaje || error.message}`
+      });
+      fetchAnimales();
+    }
+  };
+
   return (
     <div className="admin-container">
-      <Menu />
+      <MenuEmp />
       <div className="content-container">
         <h1>Animales Registrados</h1>
         <SearchComponent 
@@ -258,10 +267,10 @@ const AdminAnimales = () => {
                         <i className="bi bi-pencil"></i> Editar
                       </Button>
                       <Button 
-                        className="crud-btn crud-btn-danger"
-                        onClick={() => handleDeleteAnimal(animal.id_animal)}
+                        className={`crud-btn ${animal.estado === 'Activo' ? 'crud-btn-danger' : 'crud-btn-success'}`}
+                        onClick={() => handleStatusChange(animal.id_animal, animal.estado)}
                       >
-                        <i className="bi bi-trash"></i> Eliminar
+                        <i className="bi bi-power"></i> {animal.estado === 'Activo' ? 'Desactivar' : 'Activar'}
                       </Button>
                     </td>
                   </tr>
@@ -356,4 +365,4 @@ const AdminAnimales = () => {
   );
 };
 
-export default AdminAnimales;
+export default EmpAnimales;

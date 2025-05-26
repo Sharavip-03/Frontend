@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import './marcas.css';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
-import Menu from '../../components/AdminNavbar/admin';
-import API_BASE_URL from '../../config/apiConfig';
-import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
-import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
+import MenuEmp from '../../../components/AdminNavbar/empleado';
+import API_BASE_URL from '../../../config/apiConfig';
+import { SearchComponent } from '../../buscador/ParaCruds/SearchComponent';
+import { PaginationComponent } from '../../buscador/ParaCruds/PaginationComponent';
 import Swal from 'sweetalert2';
 
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
 
-const AdminMarcas = () => {
+const EmpMarcas = () => {
   const [marcas, setMarcas] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -137,45 +137,6 @@ const AdminMarcas = () => {
     setShowModal(true);
   };
 
-  const handleDeleteMarca = async (id_marca) => {
-    const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: "¡No podrás revertir esto!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
-    });
-
-    if (!result.isConfirmed) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/PrivMarca/${id_marca}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      Swal.fire(
-        '¡Eliminado!',
-        'La marca ha sido eliminada.',
-        'success'
-      );
-
-      fetchMarcas();
-    } catch (error) {
-      console.error("Error al eliminar la marca:", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: error.response?.data?.mensaje || 'Error al eliminar la marca'
-      });
-    }
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditMarca({ ...editMarca, [name]: value });
@@ -259,9 +220,54 @@ const AdminMarcas = () => {
     }
   };
 
+  const handleStatusChange = async (id_marca, estadoActual) => {
+    const result = await Swal.fire({
+      title: `¿Estás seguro?`,
+      text: `¿Deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} esta marca?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí',
+      cancelButtonText: 'Cancelar'
+    });
+    
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const nuevoEstado = estadoActual === 'Activo' ? 'Inactivo' : 'Activo';
+      await axios.patch(`${API_BASE_URL}/PrivMarca/${id_marca}`, { estado: nuevoEstado }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setMarcas(prevMarcas => 
+        prevMarcas.map(marca => 
+          marca.id_marca === id_marca 
+            ? { ...marca, estado: nuevoEstado }
+            : marca
+        )
+      );
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: `Marca ${nuevoEstado === 'Activo' ? 'activada' : 'desactivada'} exitosamente`
+      });
+    } catch (error) {
+      console.error("Error al cambiar el estado:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al cambiar el estado'
+      });
+      fetchMarcas();
+    }
+  };
+
   return (
     <div className="admin-container">
-      <Menu />
+      <MenuEmp />
       <div className="content-container">
         <h1>Marcas Registradas</h1>
         <SearchComponent 
@@ -313,10 +319,10 @@ const AdminMarcas = () => {
                         Editar
                       </Button>
                       <Button 
-                        className="crud-btn crud-btn-danger"
-                        onClick={() => handleDeleteMarca(marca.id_marca)}
+                        className={`crud-btn ${marca.estado === 'Activo' ? 'crud-btn-danger' : 'crud-btn-success'}`}
+                        onClick={() => handleStatusChange(marca.id_marca, marca.estado)}
                       >
-                        Eliminar
+                        {marca.estado === 'Activo' ? 'Desactivar' : 'Activar'}
                       </Button>
                     </td>
                   </tr>
@@ -431,4 +437,4 @@ const AdminMarcas = () => {
   );
 };
 
-export default AdminMarcas;
+export default EmpMarcas;

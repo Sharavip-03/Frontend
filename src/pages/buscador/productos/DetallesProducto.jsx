@@ -7,10 +7,7 @@ import {
   ZoomIn,
   LocalOffer,
   CheckCircle,
-  Cancel,
-  Star,
-  StarHalf,
-  StarBorder
+  Cancel
 } from '@mui/icons-material';
 import './detallesProducto.css';
 import API_BASE_URL from '../../../config/apiConfig';

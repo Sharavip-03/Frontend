@@ -10,7 +10,8 @@ import axios from 'axios';
 import DetallesProducto from './pages/buscador/productos/DetallesProducto.jsx';
 import Swal from 'sweetalert2';
 import HistorialCompras from './pages/principal/HistorialCompras.jsx';
-import FacturaDetalle from './pages/principal/FacturaDetalle.jsx'
+import FacturaDetalle from './pages/principal/FacturaDetalle.jsx';
+import EmpleadoRoutes from './routes/EmpleadoRoutes'
 
 axios.interceptors.response.use(
   response => response,
@@ -53,6 +54,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/admin/*" element={<NavbarRoutes />} />
+        <Route path="/empleado/*" element={<EmpleadoRoutes />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/pago/:id_factura" element={<FormularioPago />} />
         <Route path="/producto/:id" element={<DetallesProducto />} />

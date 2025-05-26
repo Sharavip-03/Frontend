@@ -46,7 +46,7 @@ const NavbarRoutes = () => {
             </ProtectedRoute>
           } />
           <Route path="facturas" element={
-            <ProtectedRoute staffOnly>
+            <ProtectedRoute adminOnly>
               <AdminFacturas />
             </ProtectedRoute>
           } />
