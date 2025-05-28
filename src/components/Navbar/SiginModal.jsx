@@ -117,7 +117,7 @@ const RegistroModal = ({ show, handleClose, handleLoginClick }) => {
       const { confirmContrasena, ...userData } = formData;
       const response = await axios.post(`${API_BASE_URL}/signin`, userData);
 
-      if (response.data.token_de_acceso) {
+      if (response.status === 200)  {
         await Swal.fire({
           icon: 'success',
           title: '¡Registro exitoso!',
