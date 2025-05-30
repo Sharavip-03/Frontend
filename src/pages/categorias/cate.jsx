@@ -46,6 +46,10 @@ const AdminCategorias = () => {
     if (editCategoria.descripcion && editCategoria.descripcion.length > 255) {
       newErrors.descripcion = 'La descripción no puede exceder 255 caracteres';
     }
+
+    if (isNewCategoria && !editCategoria.imagenFile && !editCategoria.imagen) {
+      newErrors.imagen = 'La imagen es requerida';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -305,23 +309,32 @@ const AdminCategorias = () => {
           Descripción de la categoría (máximo 255 caracteres).
         </Form.Text>
       </Form.Group>
-      <Form.Group className="mb-3" controlId="formImagenCategoria">
-        <Form.Label>Imagen</Form.Label>
-        <Form.Control 
-          type="file" 
-          accept="image/*" 
-          onChange={handleImageUpload} 
-          title="Suba una imagen representativa de la categoría (opcional). Formatos aceptados: JPG, PNG, etc."
-        />
-        {editCategoria.imagen && (
-          <div className="mt-2">
-            <img src={editCategoria.imagen} alt="Vista previa" style={{ width: "100px", height: "auto" }} />
-          </div>
-        )}
-        <Form.Text className="text-muted">
-          Imagen representativa de la categoría (formatos: JPG, PNG, etc.).
-        </Form.Text>
-      </Form.Group>
+    <Form.Group className="mb-3" controlId="formImagen">
+      <Form.Label>Imagen {isNewCategoria && '*'}</Form.Label>
+      <Form.Control 
+        type="file" 
+        accept="image/*" 
+        onChange={handleImageUpload} 
+        className={errors.imagen ? 'is-invalid' : ''}
+        required={isNewCategoria}
+        title="Suba una imagen de la Categoria. Formatos aceptados: JPG, PNG, etc."
+      />
+      {errors.imagen && <div className="invalid-feedback">{errors.imagen}</div>}
+      {editCategoria.imagen && (
+        <div className="mt-2">
+          <img 
+            src={editCategoria.imagen} 
+            alt="Vista previa" 
+            style={{ width: "100px", height: "auto" }} 
+            className="img-thumbnail"
+          />
+        </div>
+      )}
+      <Form.Text className="text-muted">
+        Imagen representativa del Categoria (formatos: JPG, PNG, etc.). 
+        {isNewCategoria && " Campo obligatorio para nuevas Categorias."}
+      </Form.Text>
+    </Form.Group>
       <Button variant="secondary" onClick={() => setShowModal(false)}>
         Cancelar
       </Button>

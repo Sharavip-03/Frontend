@@ -64,6 +64,10 @@ const AdminProductos = () => {
     if (!editProducto.precio || editProducto.precio <= 0) {
       newErrors.precio = 'El precio debe ser mayor a 0';
     }
+
+    if (isNewProducto && !editProducto.imagenFile && !editProducto.imagen) {
+      newErrors.imagen = 'La imagen es requerida';
+    }
     
     if (!editProducto.stock || editProducto.stock < 0) {
       newErrors.stock = 'El stock no puede ser negativo';
@@ -335,6 +339,17 @@ const AdminProductos = () => {
       if (editProducto.imagenFile) {
         formData.append('imagen', editProducto.imagenFile);
       }
+        if (!validateForm()) {
+          // Si hay errores, desplazarse al primer error
+          const firstError = Object.keys(errors)[0];
+          if (firstError) {
+            document.querySelector(`[name="${firstError}"]`)?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+          return;
+        }
 
       const config = {
         headers: {
@@ -681,29 +696,33 @@ const AdminProductos = () => {
         </Form.Text>
       </Form.Group>
       
-      <Form.Group className="mb-3" controlId="formImagen">
-        <Form.Label>Imagen</Form.Label>
-        <Form.Control 
-          type="file" 
-          accept="image/*" 
-          onChange={handleImageUpload} 
-          disabled={loading}
-          title="Suba una imagen del producto (opcional). Formatos aceptados: JPG, PNG, etc."
-        />
-        {editProducto.imagen && (
-          <div className="mt-2">
-            <img 
-              src={editProducto.imagen} 
-              alt="Vista previa" 
-              style={{ width: "100px", height: "auto" }} 
-              className="img-thumbnail"
-            />
-          </div>
-        )}
-        <Form.Text className="text-muted">
-          Imagen representativa del producto (formatos: JPG, PNG, etc.).
-        </Form.Text>
-      </Form.Group>
+    <Form.Group className="mb-3" controlId="formImagen">
+      <Form.Label>Imagen {isNewProducto && '*'}</Form.Label>
+      <Form.Control 
+        type="file" 
+        accept="image/*" 
+        onChange={handleImageUpload} 
+        disabled={loading}
+        className={errors.imagen ? 'is-invalid' : ''}
+        required={isNewProducto}
+        title="Suba una imagen del producto. Formatos aceptados: JPG, PNG, etc."
+      />
+      {errors.imagen && <div className="invalid-feedback">{errors.imagen}</div>}
+      {editProducto.imagen && (
+        <div className="mt-2">
+          <img 
+            src={editProducto.imagen} 
+            alt="Vista previa" 
+            style={{ width: "100px", height: "auto" }} 
+            className="img-thumbnail"
+          />
+        </div>
+      )}
+      <Form.Text className="text-muted">
+        Imagen representativa del producto (formatos: JPG, PNG, etc.). 
+        {isNewProducto && " Campo obligatorio para nuevos productos."}
+      </Form.Text>
+    </Form.Group>
     </Form>
   </Modal.Body>
   <Modal.Footer>

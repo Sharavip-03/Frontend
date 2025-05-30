@@ -46,6 +46,10 @@ const AdminAnimales = () => {
     if (!editAnimal.estado) {
       newErrors.estado = 'El estado es requerido';
     }
+
+    if (isNewAnimal && !editAnimal.imagenFile && !editAnimal.imagen) {
+      newErrors.imagen = 'La imagen es requerida';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -323,23 +327,32 @@ const AdminAnimales = () => {
           Estado actual del animal en el sistema. Campo obligatorio.
         </Form.Text>
       </Form.Group>
-      <Form.Group className="mb-3" controlId="formImagenAnimal">
-        <Form.Label>Imagen</Form.Label>
-        <Form.Control 
-          type="file" 
-          accept="image/*" 
-          onChange={handleImageUpload} 
-          title="Suba una imagen representativa del animal (opcional). Formatos aceptados: JPG, PNG, etc."
-        />
-        {editAnimal.imagen && (
-          <div className="mt-2">
-            <img src={editAnimal.imagen} alt="Vista previa" style={{ width: "100px", height: "auto" }} />
-          </div>
-        )}
-        <Form.Text className="text-muted">
-          Imagen representativa del animal (formatos: JPG, PNG, etc.).
-        </Form.Text>
-      </Form.Group>
+    <Form.Group className="mb-3" controlId="formImagen">
+      <Form.Label>Imagen {isNewAnimal && '*'}</Form.Label>
+      <Form.Control 
+        type="file" 
+        accept="image/*" 
+        onChange={handleImageUpload} 
+        className={errors.imagen ? 'is-invalid' : ''}
+        required={isNewAnimal}
+        title="Suba una imagen del Animal. Formatos aceptados: JPG, PNG, etc."
+      />
+      {errors.imagen && <div className="invalid-feedback">{errors.imagen}</div>}
+      {editAnimal.imagen && (
+        <div className="mt-2">
+          <img 
+            src={editAnimal.imagen} 
+            alt="Vista previa" 
+            style={{ width: "100px", height: "auto" }} 
+            className="img-thumbnail"
+          />
+        </div>
+      )}
+      <Form.Text className="text-muted">
+        Imagen representativa del Animal (formatos: JPG, PNG, etc.). 
+        {isNewAnimal && " Campo obligatorio para nuevos animal."}
+      </Form.Text>
+    </Form.Group>
       <div className="d-flex justify-content-end">
         <Button variant="secondary" onClick={() => setShowModal(false)} className="me-2">
           Cancelar
