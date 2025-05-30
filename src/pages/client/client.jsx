@@ -292,12 +292,11 @@ const AdminClientes = () => {
         </div>
 
         <PaginationComponent 
-          data={filteredData}
+          totalItems={filteredData.length}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
+          onPageChange={setCurrentPage}
         />
-
         <Modal show={showModal} onHide={() => setShowModal(false)}  className="modal-override categoria-modal">
           <Modal.Header closeButton>
             <Modal.Title>{isNewUser ? 'Agregar Usuario' : 'Editar Usuario'}</Modal.Title>

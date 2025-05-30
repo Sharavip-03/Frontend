@@ -528,10 +528,10 @@ const AdminProductos = () => {
         </div>
 
         <PaginationComponent 
-          data={filteredData}
+          totalItems={filteredData.length}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
+          onPageChange={setCurrentPage}
         />
 
 <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" className="modal-override categoria-modal">
