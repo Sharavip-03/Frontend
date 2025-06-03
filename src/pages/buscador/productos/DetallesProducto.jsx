@@ -11,6 +11,7 @@ import {
 } from '@mui/icons-material';
 import './detallesProducto.css';
 import API_BASE_URL from '../../../config/apiConfig';
+import Swal from 'sweetalert2';
 
 const DetallesProducto = () => {
     const { id } = useParams();
@@ -21,7 +22,6 @@ const DetallesProducto = () => {
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [cantidad, setCantidad] = useState(1);
     const [showZoomModal, setShowZoomModal] = useState(false);
-
 
     useEffect(() => {
         const fetchData = async () => {
@@ -76,14 +76,45 @@ const DetallesProducto = () => {
     }, [id]);
 
     const addToCart = async () => {
+        // Verificar si el producto está disponible
+        if (producto.estado !== 'Disponible') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Producto no disponible',
+                text: 'Este producto no está disponible para agregar al carrito'
+            });
+            return;
+        }
+
+        // Verificar stock
+        if (producto.stock <= 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Producto agotado',
+                text: 'No hay stock disponible de este producto'
+            });
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                alert("Por favor inicia sesión para agregar productos al carrito");
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Inicia sesión',
+                    text: 'Por favor inicia sesión para agregar productos al carrito',
+                    showCancelButton: true,
+                    confirmButtonText: 'Iniciar sesión',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        navigate('/login');
+                    }
+                });
                 return;
             }
 
-            await axios.post(`${API_BASE_URL}/Carrito/agregar`, {
+            const response = await axios.post(`${API_BASE_URL}/Carrito/agregar`, {
                 id_usuario: localStorage.getItem('id'),
                 id_producto: producto.id_producto,
                 cantidad: cantidad
@@ -91,10 +122,31 @@ const DetallesProducto = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            alert("Producto agregado al carrito");
+            Swal.fire({
+                icon: 'success',
+                title: '¡Producto agregado!',
+                text: 'El producto ha sido añadido a tu carrito',
+                timer: 1500,
+                showConfirmButton: false
+            });
         } catch (error) {
             console.error("Error al agregar al carrito:", error);
-            alert("Error al agregar producto al carrito");
+            
+            let errorMessage = 'Error al agregar producto al carrito';
+            if (error.response) {
+                errorMessage = error.response.data?.mensaje || errorMessage;
+                if (error.response.status === 401) {
+                    errorMessage = 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.';
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('id');
+                }
+            }
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: errorMessage
+            });
         }
     };
 
@@ -106,8 +158,6 @@ const DetallesProducto = () => {
     const incrementQuantity = () => cantidad < producto.stock && setCantidad(cantidad + 1);
     const decrementQuantity = () => cantidad > 1 && setCantidad(cantidad - 1);
     const toggleZoomModal = () => setShowZoomModal(!showZoomModal);
-
-
 
     if (loading) return (
         <div className="product-loading">
@@ -196,8 +246,6 @@ const DetallesProducto = () => {
                         )}
                         {producto.estado} {producto.stock > 0 && `(${producto.stock} disponibles)`}
                     </div>
-
-
 
                     <div className="price-section">
                         {producto.precio_descuento ? (

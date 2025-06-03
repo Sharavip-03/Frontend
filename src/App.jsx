@@ -18,13 +18,15 @@ axios.interceptors.response.use(
   error => {
     if (error.response) {
       if (error.response.status === 401 || 
-          error.response.status === 500 && 
-          error.config.url.includes('/Priv/')) { // Manejar errores 500 en rutas privadas
-        // Token expirado o no válido
+          (error.response.status === 500 && error.config.url.includes('/Priv/'))) {
+        
+        // Limpiar todo
         localStorage.removeItem('token');
         localStorage.removeItem('id');
         localStorage.removeItem('rol');
         localStorage.removeItem('isLogged');
+        localStorage.removeItem('persistentAuth');
+        sessionStorage.removeItem('token');
         
         Swal.fire({
           icon: 'warning',
@@ -34,15 +36,6 @@ axios.interceptors.response.use(
         }).then(() => {
           window.location.href = '/';
         });
-        return Promise.reject(error);
-      } else if (error.response.status === 403) {
-        // Acceso prohibido
-        Swal.fire({
-          icon: 'error',
-          title: 'Acceso denegado',
-          text: 'No tienes permisos para realizar esta acción',
-          confirmButtonText: 'Entendido'
-        });
       }
     }
     return Promise.reject(error);
@@ -50,6 +43,38 @@ axios.interceptors.response.use(
 );
 
 function App() {
+// En tu App.jsx, modifica el useEffect para manejar el cierre de sesión
+React.useEffect(() => {
+  // Verificar autenticación al cargar la app
+  const checkAuth = () => {
+    const token = localStorage.getItem("token");
+    
+    if (!token && window.location.pathname !== '/') {
+      window.location.href = '/';
+    }
+  };
+
+  checkAuth();
+
+  // Limpieza al cerrar la pestaña/navegador
+  const handleBeforeUnload = () => {
+    // Solo limpiar si no es una sesión persistente
+    if (!localStorage.getItem("persistentAuth")) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('id');
+      localStorage.removeItem('rol');
+      localStorage.removeItem('isLogged');
+      sessionStorage.removeItem('token');
+    }
+  };
+
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  
+  return () => {
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+  };
+}, []);
+
   return (
     <Router>
       <Routes>

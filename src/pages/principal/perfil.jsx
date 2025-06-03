@@ -190,7 +190,7 @@ const Perfil = ({ onClose }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setSuccess("Perfil actualizado correctamente");
+      // Actualiza el estado del usuario
       setUser({
         nombres: editUser.nombres,
         apellidos: editUser.apellidos,
@@ -201,10 +201,16 @@ const Perfil = ({ onClose }) => {
         num_documento: editUser.num_documento
       });
       
-      setTimeout(() => {
-        setShowEditModal(false);
-        setSuccess(null);
-      }, 2000);
+      // Muestra la alerta de SweetAlert2
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Perfil actualizado!',
+        text: 'Tus cambios se han guardado correctamente.',
+        confirmButtonText: 'Aceptar'
+      });
+      
+      // Cierra el modal después de que el usuario haga clic en Aceptar
+      setShowEditModal(false);
       
     } catch (err) {
       setError(err.response?.data?.mensaje || "Error al actualizar el perfil");
@@ -212,13 +218,17 @@ const Perfil = ({ onClose }) => {
   };
 
   const cerrarSesion = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("id");
-    localStorage.removeItem("isLogged");
+    // Limpiar todo
+    localStorage.removeItem('token');
+    localStorage.removeItem('id');
+    localStorage.removeItem('rol');
+    localStorage.removeItem('isLogged');
+    localStorage.removeItem('persistentAuth');
+    sessionStorage.removeItem('token');
+    
     if (onClose) onClose();
-    window.location.reload();
-    };
-
+    window.location.href = '/'; 
+  };
   const getTipoDocNombre = (tipoDocId) => {
     if (!tipoDocId) return "No especificado";
     const tipo = tiposDoc.find(t => t.id_TipoDocumento === parseInt(tipoDocId));
@@ -309,7 +319,6 @@ const Perfil = ({ onClose }) => {
           <Modal.Title>Editar Perfil</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {success && <Alert variant="success">{success}</Alert>}
           {error && <Alert variant="danger">{error}</Alert>}
           
           <Form onSubmit={handleEditSubmit}>

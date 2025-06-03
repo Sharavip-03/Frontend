@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Form, Button, Container, Row, Col, Card, Alert, Modal } from 'react-bootstrap';
 import axios from 'axios';
@@ -147,11 +147,17 @@ const FormularioPago = () => {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
+            if (!response.data?.pago) {
+    throw new Error('La respuesta del servidor no contiene datos de pago');
+}
     
             Swal.close();
-            setPagoInfo(response.data.pago);
+            setPagoInfo({
+                referencia_pago: response.data.pago.referencia_pago || 'N/A',
+                estado_pago: response.data.pago.estado_pago || 'Desconocido'
+            });      
             setShowModal(true);
-            
+                        
             if (response.data.carrito_vaciado) {
                 // Limpiar carrito en el estado global si es necesario
             }
@@ -388,24 +394,24 @@ const FormularioPago = () => {
                         <Modal.Title>Pago procesado</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        {pagoInfo && (
+                        {pagoInfo ? (
                             <>
                                 <div className="payment-result">
                                     <div className="result-item">
                                         <span className="result-label">Referencia:</span>
-                                        <span className="result-value">{pagoInfo.referencia_pago}</span>
+                                        <span className="result-value">{pagoInfo.referencia_pago || 'No disponible'}</span>
                                     </div>
                                     <div className="result-item">
                                         <span className="result-label">Estado:</span>
-                                        <span className={`result-value estado-${pagoInfo.estado_pago.toLowerCase()}`}>
-                                            {pagoInfo.estado_pago}
+                                        <span className={`result-value estado-${pagoInfo.estado_pago?.toLowerCase() || 'desconocido'}`}>
+                                            {pagoInfo.estado_pago || 'Desconocido'}
                                         </span>
                                     </div>
                                 </div>
 
-                                {pagoInfo.estado_pago === 'Aprobado' && (
+                                {pagoInfo.estado_pago === 'Pagada' && (
                                     <Alert variant="success" className="payment-alert">
-                                        Tu pago ha sido aprobado. Hemos enviado un correo con los detalles de tu compra.
+                                        Tu pago ha sido aprobado.
                                     </Alert>
                                 )}
                                 {pagoInfo.estado_pago === 'Pendiente' && (
@@ -414,24 +420,25 @@ const FormularioPago = () => {
                                     </Alert>
                                 )}
                             </>
+                        ) : (
+                            <Alert variant="danger">No se recibió información del pago</Alert>
                         )}
                     </Modal.Body>
                     <Modal.Footer>
-                    <div className="Colores-secu">
-                    <Button 
+                        <div className="Colores-secu">
+                            <Button 
                                 onClick={() => navigate('/historial-compras')}
                                 className="btn-naranja"
-                                >
+                            >
                                 Ir al historial de compras
-                                </Button>
-
-                        <Button className="cerrar" onClick={() => {
-                            setShowModal(false);
-                            navigate('/');
-                        }}>
-                            Cerrar
-                        </Button>
-                    </div>
+                            </Button>
+                            <Button className="cerrar" onClick={() => {
+                                setShowModal(false);
+                                navigate('/');
+                            }}>
+                                Cerrar
+                            </Button>
+                        </div>
                     </Modal.Footer>
                 </Modal>
             </Container>

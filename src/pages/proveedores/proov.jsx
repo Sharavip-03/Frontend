@@ -5,6 +5,7 @@ import Menu from '../../components/AdminNavbar/admin';
 import API_BASE_URL from '../../config/apiConfig';
 import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
 import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
+import Swal from 'sweetalert2';
 
 const AdminProveedores = () => {
   const [proveedores, setProveedores] = useState([]);
@@ -20,6 +21,47 @@ const AdminProveedores = () => {
     correo: '',
     estado: 'activo'
   });
+
+  // Funciones para SweetAlert
+  const showSuccessAlert = (title, text) => {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'success',
+      confirmButtonText: 'Aceptar'
+    });
+  };
+
+  const showErrorAlert = (title, text) => {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'error',
+      confirmButtonText: 'Aceptar'
+    });
+  };
+
+  const showConfirmAlert = (title, text, confirmButtonText) => {
+    return Swal.fire({
+      title: title,
+      text: text,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: confirmButtonText || 'Confirmar',
+      cancelButtonText: 'Cancelar'
+    });
+  };
+
+  const showWarningAlert = (title, text) => {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'warning',
+      confirmButtonText: 'Aceptar'
+    });
+  };
 
   useEffect(() => {
     fetchProveedores();
@@ -47,6 +89,10 @@ const AdminProveedores = () => {
       })));
     } catch (error) {
       console.error("Error al obtener los proveedores:", error.response?.data || error.message);
+      showErrorAlert(
+        "Error al cargar proveedores",
+        "No se pudieron cargar los proveedores. Por favor intente nuevamente."
+      );
     }
   };
 
@@ -73,6 +119,38 @@ const AdminProveedores = () => {
     setEditProvider({ ...editProvider, [name]: value });
   };
 
+  // Función para verificar si un correo ya existe
+  const checkEmailExists = async (email) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No hay token disponible");
+        return false;
+      }
+
+      // Verificar primero en los proveedores ya cargados
+      const existsLocally = proveedores.some(
+        p => p.correo.toLowerCase() === email.toLowerCase() && 
+             p.id_proveedor !== editProvider.id_proveedor
+      );
+
+      if (existsLocally) {
+        return true;
+      }
+
+      // Si no está localmente, verificar con el backend
+      const response = await axios.get(`${API_BASE_URL}/adminProveedor/check-email`, {
+        params: { email },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      return response.data.exists;
+    } catch (error) {
+      console.error("Error al verificar email:", error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -83,28 +161,67 @@ const AdminProveedores = () => {
         return;
       }
 
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editProvider.correo)) {
+        showErrorAlert(
+          "Correo inválido",
+          "Por favor ingrese un correo electrónico válido."
+        );
+        return;
+      }
+
+      // Validar si el correo ya existe (solo para nuevos proveedores o cuando cambia el email)
+      if (isNewProvider || 
+          (editProvider.id_proveedor && 
+           proveedores.find(p => p.id_proveedor === editProvider.id_proveedor)?.correo !== editProvider.correo)) {
+        const emailExists = await checkEmailExists(editProvider.correo);
+        if (emailExists) {
+          showErrorAlert(
+            "Correo ya registrado",
+            "El correo electrónico ingresado ya está registrado para otro proveedor."
+          );
+          return;
+        }
+      }
+
       if (isNewProvider) {
         await axios.post(`${API_BASE_URL}/adminProveedor`, editProvider, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        alert('Proveedor creado exitosamente');
+        showSuccessAlert(
+          "Proveedor creado", 
+          "El proveedor ha sido creado exitosamente"
+        );
       } else {
         await axios.put(`${API_BASE_URL}/adminProveedor/${editProvider.id_proveedor}`, editProvider, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        alert('Proveedor actualizado exitosamente');
+        showSuccessAlert(
+          "Proveedor actualizado", 
+          "Los datos del proveedor han sido actualizados"
+        );
       }
 
       fetchProveedores();
       setShowModal(false);
     } catch (error) {
       console.error("Error al procesar proveedor:", error);
-      alert(`Error al ${isNewProvider ? 'crear' : 'actualizar'} proveedor: ${error.response?.data?.mensaje || error.message}`);
+      showErrorAlert(
+        `Error al ${isNewProvider ? 'crear' : 'actualizar'} proveedor`,
+        error.response?.data?.mensaje || error.message || "Ocurrió un error inesperado"
+      );
     }
   };
 
   const toggleProveedorEstado = async (id_proveedor, estadoActual) => {
-    if (!window.confirm(`¿Estás seguro que deseas ${estadoActual === 'activo' ? 'desactivar' : 'activar'} este proveedor?`)) {
+    const result = await showConfirmAlert(
+      `¿Cambiar estado del proveedor?`,
+      `¿Estás seguro que deseas ${estadoActual === 'activo' ? 'desactivar' : 'activar'} este proveedor?`,
+      estadoActual === 'activo' ? 'Desactivar' : 'Activar'
+    );
+
+    if (!result.isConfirmed) {
       return;
     }
 
@@ -132,21 +249,23 @@ const AdminProveedores = () => {
           )
         );
 
-        alert(`Proveedor ${nuevoEstado === 'activo' ? 'activado' : 'desactivado'} exitosamente`);
+        showSuccessAlert(
+          `Proveedor ${nuevoEstado === 'activo' ? 'activado' : 'desactivado'}`,
+          `El proveedor ha sido ${nuevoEstado === 'activo' ? 'activado' : 'desactivado'} correctamente`
+        );
       }
     } catch (error) {
-      console.error("Error al cambiar estado del proveedor:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
+      console.error("Error al cambiar estado del proveedor:", error);
       
       const errorMsg = error.response?.data?.mensaje || 
                       error.response?.data?.message || 
                       error.message || 
                       "Error desconocido";
       
-      alert(`Error al cambiar estado: ${errorMsg}`);
+      showErrorAlert(
+        "Error al cambiar estado",
+        errorMsg
+      );
       
       await fetchProveedores();
     }

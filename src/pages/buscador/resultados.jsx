@@ -8,6 +8,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import './buscador.css';
 import { SearchBar } from "./buscador.jsx";
+import Swal from 'sweetalert2';
 
 const SearchResults = () => {
     const location = useLocation();
@@ -79,6 +80,13 @@ const SearchResults = () => {
                 return;
             }
 
+            console.log("Intentando agregar producto al carrito..."); // Debug
+            console.log("Datos enviados:", { // Debug
+                id_usuario: localStorage.getItem('id'),
+                id_producto: product.id_producto,
+                cantidad: 1
+            });
+
             const response = await axios.post(`${API_BASE_URL}/Carrito/agregar`, {
                 id_usuario: localStorage.getItem('id'),
                 id_producto: product.id_producto,
@@ -88,6 +96,8 @@ const SearchResults = () => {
                     Authorization: `Bearer ${token}`
                 }
             });
+
+            console.log("Respuesta del servidor:", response.data); // Debug
 
             setCartItems(prevItems => {
                 const existingItem = prevItems.find(item => item.id_producto === product.id_producto);
@@ -110,15 +120,26 @@ const SearchResults = () => {
                 showConfirmButton: false
             });
         } catch (error) {
-            console.error("Error al agregar al carrito:", error);
+            console.error("Error completo al agregar al carrito:", error); // Debug más detallado
+            console.error("Respuesta de error:", error.response); // Debug
+            
+            let errorMessage = 'Error al agregar producto al carrito';
+            if (error.response) {
+                errorMessage = error.response.data?.mensaje || errorMessage;
+                if (error.response.status === 401) {
+                    errorMessage = 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.';
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('id');
+                }
+            }
+
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: error.response?.data?.mensaje || 'Error al agregar producto al carrito'
+                text: errorMessage
             });
         }
     };
-
     const searchProducts = (products, query) => {
         if (!query.trim()) return products;
         const searchTerm = query.toLowerCase().trim();

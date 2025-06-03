@@ -6,6 +6,7 @@ import Menu from '../../components/AdminNavbar/admin';
 import API_BASE_URL from '../../config/apiConfig';
 import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
 import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
+import Swal from 'sweetalert2';
 
 const AdminClientes = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -28,6 +29,50 @@ const AdminClientes = () => {
     estado: 'Activo',
     contrasena: ''
   });
+
+  // Función para mostrar alertas de éxito
+  const showSuccessAlert = (title, text) => {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'success',
+      confirmButtonText: 'Aceptar'
+    });
+  };
+
+  // Función para mostrar alertas de error
+  const showErrorAlert = (title, text) => {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'error',
+      confirmButtonText: 'Aceptar'
+    });
+  };
+
+  // Función para mostrar alertas de confirmación
+  const showConfirmAlert = (title, text, confirmButtonText) => {
+    return Swal.fire({
+      title: title,
+      text: text,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: confirmButtonText || 'Confirmar',
+      cancelButtonText: 'Cancelar'
+    });
+  };
+
+  // Función para mostrar alertas de advertencia
+  const showWarningAlert = (title, text) => {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'warning',
+      confirmButtonText: 'Aceptar'
+    });
+  };
 
   // Cargar tipos de documento y luego usuarios
   useEffect(() => {
@@ -77,9 +122,15 @@ const AdminClientes = () => {
       });
       
       if (error.response?.status === 401) {
-        alert("Tu sesión ha expirado. Por favor inicia sesión nuevamente.");
+        showErrorAlert(
+          "Sesión expirada", 
+          "Tu sesión ha expirado. Por favor inicia sesión nuevamente."
+        );
       } else {
-        alert("Error al cargar usuarios. Por favor intenta nuevamente.");
+        showErrorAlert(
+          "Error al cargar usuarios", 
+          "Error al cargar usuarios. Por favor intenta nuevamente."
+        );
       }
     }
   };
@@ -90,6 +141,10 @@ const AdminClientes = () => {
       setTiposDoc(response.data.tipo_docs || response.data);
     } catch (error) {
       console.error("Error al obtener los tipos de documento:", error);
+      showErrorAlert(
+        "Error al cargar tipos de documento", 
+        "No se pudieron cargar los tipos de documento. Por favor intenta nuevamente."
+      );
     }
   };
 
@@ -125,51 +180,124 @@ const AdminClientes = () => {
     setEditUser({ ...editUser, [name]: value });
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    try {
-      const userData = {
-        ...editUser,
-        tipo_doc: parseInt(editUser.tipo_doc)
-      };
+  try {
+    const userData = {
+      ...editUser,
+      tipo_doc: parseInt(editUser.tipo_doc)
+    };
 
-      if (!isNewUser && !userData.contrasena) {
-        delete userData.contrasena;
-      }
+    if (!isNewUser && !userData.contrasena) {
+      delete userData.contrasena;
+    }
 
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No hay token disponible");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("No hay token disponible");
+      return;
+    }
+
+    // Validar si el email ya existe (solo para nuevos usuarios)
+    if (isNewUser) {
+      const emailExists = await checkIfExists('email', userData.email);
+      if (emailExists) {
+        showErrorAlert(
+          "Email ya registrado",
+          "El correo electrónico ingresado ya está registrado en el sistema. Por favor use otro email."
+        );
         return;
       }
-
-      if (isNewUser) {
-        if (!userData.contrasena) {
-          alert('La contraseña es requerida para nuevos usuarios');
-          return;
-        }
-        await axios.post(`${API_BASE_URL}/Priv`, userData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        alert('Usuario creado exitosamente');
-      } else {
-        await axios.put(`${API_BASE_URL}/Priv/${editUser.id_usuario}`, userData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        alert('Usuario actualizado exitosamente');
-      }
-
-      fetchUsuarios();
-      setShowModal(false);
-    } catch (error) {
-      console.error("Error al procesar usuario:", error);
-      alert(`Error al ${isNewUser ? 'crear' : 'actualizar'} usuario: ${error.response?.data?.mensaje || error.message}`);
     }
-  };
+
+    // Validar si el número de documento ya existe (solo para nuevos usuarios)
+    if (isNewUser) {
+      const docExists = await checkIfExists('num_documento', userData.num_documento);
+      if (docExists) {
+        showErrorAlert(
+          "Documento ya registrado",
+          "El número de documento ingresado ya está registrado en el sistema."
+        );
+        return;
+      }
+    }
+
+    if (isNewUser) {
+      if (!userData.contrasena) {
+        showWarningAlert(
+          "Contraseña requerida",
+          "La contraseña es requerida para nuevos usuarios"
+        );
+        return;
+      }
+      await axios.post(`${API_BASE_URL}/Priv`, userData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showSuccessAlert(
+        "Usuario creado", 
+        "Usuario creado exitosamente"
+      );
+    } else {
+      await axios.put(`${API_BASE_URL}/Priv/${editUser.id_usuario}`, userData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showSuccessAlert(
+        "Usuario actualizado", 
+        "Usuario actualizado exitosamente"
+      );
+    }
+
+    fetchUsuarios();
+    setShowModal(false);
+  } catch (error) {
+    console.error("Error al procesar usuario:", error);
+    showErrorAlert(
+      `Error al ${isNewUser ? 'crear' : 'actualizar'} usuario`, 
+      error.response?.data?.mensaje || error.message
+    );
+  }
+};
+
+// Función para verificar si un campo ya existe en la base de datos
+const checkIfExists = async (field, value) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("No hay token disponible");
+      return false;
+    }
+
+    // Verificar si el valor ya existe en los usuarios actuales
+    const existsInCurrentUsers = usuarios.some(user => 
+      String(user[field]).toLowerCase() === String(value).toLowerCase()
+    );
+
+    if (existsInCurrentUsers) {
+      return true;
+    }
+
+    // Si no está en los usuarios cargados, verificar con el backend
+    const response = await axios.get(`${API_BASE_URL}/Priv/check-exists`, {
+      params: { field, value },
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    return response.data.exists;
+  } catch (error) {
+    console.error("Error al verificar existencia:", error);
+    return false;
+  }
+};
 
   const toggleUsuarioEstado = async (id_usuario, estadoActual) => {
-    if (!window.confirm(`¿Estás seguro que deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} este usuario?`)) {
+    const result = await showConfirmAlert(
+      `¿Cambiar estado del usuario?`, 
+      `¿Estás seguro que deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} este usuario?`,
+      estadoActual === 'Activo' ? 'Desactivar' : 'Activar'
+    );
+    
+    if (!result.isConfirmed) {
       return;
     }
 
@@ -198,7 +326,10 @@ const AdminClientes = () => {
           )
         );
 
-        alert(`Usuario ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'} exitosamente`);
+        showSuccessAlert(
+          `Usuario ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'}`,
+          `El usuario ha sido ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'} exitosamente`
+        );
       }
     } catch (error) {
       console.error("Error al cambiar estado del usuario:", {
@@ -212,7 +343,10 @@ const AdminClientes = () => {
                       error.message || 
                       "Error desconocido";
       
-      alert(`Error al cambiar estado: ${errorMsg}`);
+      showErrorAlert(
+        "Error al cambiar estado", 
+        errorMsg
+      );
       
       // Recargar datos para mantener consistencia
       await fetchUsuarios();

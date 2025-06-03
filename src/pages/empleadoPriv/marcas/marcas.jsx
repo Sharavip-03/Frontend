@@ -46,6 +46,11 @@ const EmpMarcas = () => {
       newErrors.nombre = 'Solo letras y espacios (2-50 caracteres)';
     }
     
+
+    if (isNewMarca && !editMarca.imagenFile && !editMarca.imagen) {
+      newErrors.imagen = 'La imagen es requerida';
+    }
+    
     if (!editMarca.estado) {
       newErrors.estado = 'El estado es requerido';
     }
@@ -137,6 +142,45 @@ const EmpMarcas = () => {
     setShowModal(true);
   };
 
+  const handleDeleteMarca = async (id_marca) => {
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "¡No podrás revertir esto!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_BASE_URL}/PrivMarca/${id_marca}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      Swal.fire(
+        '¡Eliminado!',
+        'La marca ha sido eliminada.',
+        'success'
+      );
+
+      fetchMarcas();
+    } catch (error) {
+      console.error("Error al eliminar la marca:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.response?.data?.mensaje || 'Error al eliminar la marca'
+      });
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditMarca({ ...editMarca, [name]: value });
@@ -220,51 +264,6 @@ const EmpMarcas = () => {
     }
   };
 
-  const handleStatusChange = async (id_marca, estadoActual) => {
-    const result = await Swal.fire({
-      title: `¿Estás seguro?`,
-      text: `¿Deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} esta marca?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí',
-      cancelButtonText: 'Cancelar'
-    });
-    
-    if (!result.isConfirmed) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      const nuevoEstado = estadoActual === 'Activo' ? 'Inactivo' : 'Activo';
-      await axios.patch(`${API_BASE_URL}/PrivMarca/${id_marca}`, { estado: nuevoEstado }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      setMarcas(prevMarcas => 
-        prevMarcas.map(marca => 
-          marca.id_marca === id_marca 
-            ? { ...marca, estado: nuevoEstado }
-            : marca
-        )
-      );
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Éxito',
-        text: `Marca ${nuevoEstado === 'Activo' ? 'activada' : 'desactivada'} exitosamente`
-      });
-    } catch (error) {
-      console.error("Error al cambiar el estado:", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Error al cambiar el estado'
-      });
-      fetchMarcas();
-    }
-  };
-
   return (
     <div className="admin-container">
       <MenuEmp />
@@ -319,10 +318,10 @@ const EmpMarcas = () => {
                         Editar
                       </Button>
                       <Button 
-                        className={`crud-btn ${marca.estado === 'Activo' ? 'crud-btn-danger' : 'crud-btn-success'}`}
-                        onClick={() => handleStatusChange(marca.id_marca, marca.estado)}
+                        className="crud-btn crud-btn-danger"
+                        onClick={() => handleDeleteMarca(marca.id_marca)}
                       >
-                        {marca.estado === 'Activo' ? 'Desactivar' : 'Activar'}
+                        Eliminar
                       </Button>
                     </td>
                   </tr>
@@ -406,23 +405,32 @@ const EmpMarcas = () => {
           Estado actual de la marca en el sistema. Campo obligatorio.
         </Form.Text>
       </Form.Group>
-      <Form.Group className="mb-3" controlId="formImagenMarca">
-        <Form.Label>Imagen</Form.Label>
-        <Form.Control 
-          type="file" 
-          accept="image/*" 
-          onChange={handleImageUpload} 
-          title="Suba un logo o imagen representativa de la marca (opcional). Formatos aceptados: JPG, PNG, etc."
-        />
-        {editMarca.imagen && (
-          <div className="mt-2">
-            <img src={editMarca.imagen} alt="Vista previa" style={{ width: "100px", height: "auto" }} />
-          </div>
-        )}
-        <Form.Text className="text-muted">
-          Logo o imagen representativa de la marca (formatos: JPG, PNG, etc.).
-        </Form.Text>
-      </Form.Group>
+          <Form.Group className="mb-3" controlId="formImagen">
+            <Form.Label>Imagen {isNewMarca && '*'}</Form.Label>
+            <Form.Control 
+              type="file" 
+              accept="image/*" 
+              onChange={handleImageUpload} 
+              className={errors.imagen ? 'is-invalid' : ''}
+              required={isNewMarca}
+              title="Suba una imagen de la Marca. Formatos aceptados: JPG, PNG, etc."
+            />
+            {errors.imagen && <div className="invalid-feedback">{errors.imagen}</div>}
+            {editMarca.imagen && (
+              <div className="mt-2">
+                <img 
+                  src={editMarca.imagen} 
+                  alt="Vista previa" 
+                  style={{ width: "100px", height: "auto" }} 
+                  className="img-thumbnail"
+                />
+              </div>
+            )}
+            <Form.Text className="text-muted">
+              Imagen representativa del Marca (formatos: JPG, PNG, etc.). 
+              {isNewMarca && " Campo obligatorio para nuevas Marcas."}
+            </Form.Text>
+          </Form.Group>
       <Button variant="secondary" onClick={() => setShowModal(false)} className="me-2">
         Cancelar
       </Button>

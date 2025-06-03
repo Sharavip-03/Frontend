@@ -6,6 +6,7 @@ import Menu from '../../components/AdminNavbar/admin';
 import API_BASE_URL from '../../config/apiConfig';
 import { SearchComponent } from '../buscador/ParaCruds/SearchComponent';
 import { PaginationComponent } from '../buscador/ParaCruds/PaginationComponent';
+import Swal from 'sweetalert2';
 
 const AdminEmpleados = () => {
   const [empleados, setEmpleados] = useState([]);
@@ -27,6 +28,47 @@ const AdminEmpleados = () => {
     estado: 'Activo',
     contrasena: ''
   });
+
+  // Funciones para SweetAlert
+  const showSuccessAlert = (title, text) => {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'success',
+      confirmButtonText: 'Aceptar'
+    });
+  };
+
+  const showErrorAlert = (title, text) => {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'error',
+      confirmButtonText: 'Aceptar'
+    });
+  };
+
+  const showConfirmAlert = (title, text, confirmButtonText) => {
+    return Swal.fire({
+      title: title,
+      text: text,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: confirmButtonText || 'Confirmar',
+      cancelButtonText: 'Cancelar'
+    });
+  };
+
+  const showWarningAlert = (title, text) => {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'warning',
+      confirmButtonText: 'Aceptar'
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,6 +111,10 @@ const AdminEmpleados = () => {
       setEmpleados(empleadosConTipoDoc);
     } catch (error) {
       console.error("Error al obtener los empleados:", error.response?.data || error.message);
+      showErrorAlert(
+        "Error al cargar empleados",
+        "No se pudieron cargar los empleados. Por favor intente nuevamente."
+      );
     }
   };
 
@@ -78,6 +124,42 @@ const AdminEmpleados = () => {
       setTiposDoc(response.data.tipo_docs || response.data);
     } catch (error) {
       console.error("Error al obtener los tipos de documento:", error);
+      showErrorAlert(
+        "Error al cargar tipos de documento",
+        "No se pudieron cargar los tipos de documento. Por favor intente nuevamente."
+      );
+    }
+  };
+
+  // Función para verificar si un campo ya existe
+  const checkFieldExists = async (field, value, currentId = '') => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No hay token disponible");
+        return false;
+      }
+
+      // Verificar primero en los empleados ya cargados
+      const existsLocally = empleados.some(
+        emp => String(emp[field]).toLowerCase() === String(value).toLowerCase() && 
+               emp.id_usuario !== currentId
+      );
+
+      if (existsLocally) {
+        return true;
+      }
+
+      // Si no está localmente, verificar con el backend
+      const response = await axios.get(`${API_BASE_URL}/adminPrivEm/check-field`, {
+        params: { field, value },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      return response.data.exists;
+    } catch (error) {
+      console.error("Error al verificar campo:", error);
+      return false;
     }
   };
 
@@ -133,32 +215,76 @@ const AdminEmpleados = () => {
         return;
       }
 
+      // Validar email duplicado
+      if (isNewEmployee || 
+          (editEmployee.id_usuario && 
+           empleados.find(e => e.id_usuario === editEmployee.id_usuario)?.email !== editEmployee.email)) {
+        const emailExists = await checkFieldExists('email', editEmployee.email, editEmployee.id_usuario);
+        if (emailExists) {
+          showErrorAlert(
+            "Correo ya registrado",
+            "El correo electrónico ingresado ya está registrado para otro empleado."
+          );
+          return;
+        }
+      }
+
+      // Validar documento duplicado (solo para nuevos empleados)
+      if (isNewEmployee) {
+        const docExists = await checkFieldExists('num_documento', editEmployee.num_documento);
+        if (docExists) {
+          showErrorAlert(
+            "Documento ya registrado",
+            "El número de documento ingresado ya está registrado en el sistema."
+          );
+          return;
+        }
+      }
+
       if (isNewEmployee) {
         if (!employeeData.contrasena) {
-          alert('La contraseña es requerida para nuevos empleados');
+          showWarningAlert(
+            "Contraseña requerida",
+            "La contraseña es requerida para nuevos empleados"
+          );
           return;
         }
         await axios.post(`${API_BASE_URL}/adminPrivEm`, employeeData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        alert('Empleado creado exitosamente');
+        showSuccessAlert(
+          "Empleado creado", 
+          "El empleado ha sido creado exitosamente"
+        );
       } else {
         await axios.put(`${API_BASE_URL}/adminPrivEm/${editEmployee.id_usuario}`, employeeData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        alert('Empleado actualizado exitosamente');
+        showSuccessAlert(
+          "Empleado actualizado", 
+          "Los datos del empleado han sido actualizados"
+        );
       }
 
       fetchEmpleados();
       setShowModal(false);
     } catch (error) {
       console.error("Error al procesar empleado:", error);
-      alert(`Error al ${isNewEmployee ? 'crear' : 'actualizar'} empleado: ${error.response?.data?.mensaje || error.message}`);
+      showErrorAlert(
+        `Error al ${isNewEmployee ? 'crear' : 'actualizar'} empleado`,
+        error.response?.data?.mensaje || error.message || "Ocurrió un error inesperado"
+      );
     }
   };
   
   const toggleEmpleadosEstado = async (id_usuario, estadoActual) => {
-    if (!window.confirm(`¿Estás seguro que deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} este empleado?`)) {
+    const result = await showConfirmAlert(
+      `¿Cambiar estado del empleado?`,
+      `¿Estás seguro que deseas ${estadoActual === 'Activo' ? 'desactivar' : 'activar'} este empleado?`,
+      estadoActual === 'Activo' ? 'Desactivar' : 'Activar'
+    );
+
+    if (!result.isConfirmed) {
       return;
     }
 
@@ -186,21 +312,23 @@ const AdminEmpleados = () => {
           )
         );
 
-        alert(`Empleado ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'} exitosamente`);
+        showSuccessAlert(
+          `Empleado ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'}`,
+          `El empleado ha sido ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'} correctamente`
+        );
       }
     } catch (error) {
-      console.error("Error al cambiar estado del empleado:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
+      console.error("Error al cambiar estado del empleado:", error);
       
       const errorMsg = error.response?.data?.mensaje || 
                       error.response?.data?.message || 
                       error.message || 
                       "Error desconocido";
       
-      alert(`Error al cambiar estado: ${errorMsg}`);
+      showErrorAlert(
+        "Error al cambiar estado",
+        errorMsg
+      );
       
       await fetchEmpleados();
     }

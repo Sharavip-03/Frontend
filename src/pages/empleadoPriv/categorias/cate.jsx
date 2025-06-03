@@ -11,6 +11,7 @@ import Swal from 'sweetalert2';
 const cloudinaryUploadUrl = 'https://api.cloudinary.com/v1_1/dvzzqjlbj/image/upload';
 const cloudinaryPreset = 'proyecto';
 
+
 const EmpCategorias = () => {
   const [categorias, setCategorias] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -46,6 +47,10 @@ const EmpCategorias = () => {
     if (editCategoria.descripcion && editCategoria.descripcion.length > 255) {
       newErrors.descripcion = 'La descripción no puede exceder 255 caracteres';
     }
+
+    if (isNewCategoria && !editCategoria.imagenFile && !editCategoria.imagen) {
+      newErrors.imagen = 'La imagen es requerida';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -77,6 +82,45 @@ const EmpCategorias = () => {
     setEditCategoria({ ...categoria });
     setErrors({});
     setShowModal(true);
+  };
+
+  const handleDeleteCategoria = async (id_categoria) => {
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "¡No podrás revertir esto!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_BASE_URL}/categoria/${id_categoria}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      Swal.fire(
+        '¡Eliminado!',
+        'La categoría ha sido eliminada.',
+        'success'
+      );
+
+      fetchCategorias();
+    } catch (error) {
+      console.error("Error al eliminar la categoría:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.response?.data?.mensaje || 'Error al eliminar la categoría'
+      });
+    }
   };
 
   const handleInputChange = (e) => {
@@ -202,8 +246,11 @@ const EmpCategorias = () => {
                     />
                   </td>
                   <td>
-                    <Button className="crud-btn crud-btn-warning" onClick={() => handleEditCategoria(categoria)}>
+                    <Button className="crud-btn crud-btn-warning me-2" onClick={() => handleEditCategoria(categoria)}>
                       Editar
+                    </Button>
+                    <Button className="crud-btn crud-btn-danger" onClick={() => handleDeleteCategoria(categoria.id_categoria)}>
+                      Eliminar
                     </Button>
                   </td>
                 </tr>
@@ -218,10 +265,10 @@ const EmpCategorias = () => {
         </div>
 
         <PaginationComponent 
-          totalItems={filteredData.length}
+          data={filteredData}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
-          onPageChange={setCurrentPage}
+          setCurrentPage={setCurrentPage}
         />
 
 <Modal show={showModal} onHide={() => setShowModal(false)} className="modal-override categoria-modal"> 
@@ -263,23 +310,32 @@ const EmpCategorias = () => {
           Descripción de la categoría (máximo 255 caracteres).
         </Form.Text>
       </Form.Group>
-      <Form.Group className="mb-3" controlId="formImagenCategoria">
-        <Form.Label>Imagen</Form.Label>
-        <Form.Control 
-          type="file" 
-          accept="image/*" 
-          onChange={handleImageUpload} 
-          title="Suba una imagen representativa de la categoría (opcional). Formatos aceptados: JPG, PNG, etc."
-        />
-        {editCategoria.imagen && (
-          <div className="mt-2">
-            <img src={editCategoria.imagen} alt="Vista previa" style={{ width: "100px", height: "auto" }} />
-          </div>
-        )}
-        <Form.Text className="text-muted">
-          Imagen representativa de la categoría (formatos: JPG, PNG, etc.).
-        </Form.Text>
-      </Form.Group>
+    <Form.Group className="mb-3" controlId="formImagen">
+      <Form.Label>Imagen {isNewCategoria && '*'}</Form.Label>
+      <Form.Control 
+        type="file" 
+        accept="image/*" 
+        onChange={handleImageUpload} 
+        className={errors.imagen ? 'is-invalid' : ''}
+        required={isNewCategoria}
+        title="Suba una imagen de la Categoria. Formatos aceptados: JPG, PNG, etc."
+      />
+      {errors.imagen && <div className="invalid-feedback">{errors.imagen}</div>}
+      {editCategoria.imagen && (
+        <div className="mt-2">
+          <img 
+            src={editCategoria.imagen} 
+            alt="Vista previa" 
+            style={{ width: "100px", height: "auto" }} 
+            className="img-thumbnail"
+          />
+        </div>
+      )}
+      <Form.Text className="text-muted">
+        Imagen representativa del Categoria (formatos: JPG, PNG, etc.). 
+        {isNewCategoria && " Campo obligatorio para nuevas Categorias."}
+      </Form.Text>
+    </Form.Group>
       <Button variant="secondary" onClick={() => setShowModal(false)}>
         Cancelar
       </Button>

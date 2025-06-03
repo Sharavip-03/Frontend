@@ -64,6 +64,10 @@ const EmpProductos = () => {
     if (!editProducto.precio || editProducto.precio <= 0) {
       newErrors.precio = 'El precio debe ser mayor a 0';
     }
+
+    if (isNewProducto && !editProducto.imagenFile && !editProducto.imagen) {
+      newErrors.imagen = 'La imagen es requerida';
+    }
     
     if (!editProducto.stock || editProducto.stock < 0) {
       newErrors.stock = 'El stock no puede ser negativo';
@@ -180,6 +184,133 @@ const EmpProductos = () => {
     setShowModal(true);
   };
 
+  const handleDeleteProducto = async (id_producto) => {
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "¡No podrás revertir esto!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+  
+    if (!result.isConfirmed) return;
+  
+    try {
+      const token = localStorage.getItem("token");
+      setLoading(true);
+      
+      // 1. Intentar obtener facturas (con manejo de error)
+      let facturasAsociadas = [];
+      try {
+        const facturasResponse = await axios.get(`${API_BASE_URL}/facturas`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Verificar si el producto está en alguna factura
+        facturasResponse.data.forEach(factura => {
+          if (factura.detalles && Array.isArray(factura.detalles)) {
+            factura.detalles.forEach(detalle => {
+              if (detalle.id_producto === id_producto && 
+                  (factura.estado === 'Pendiente' || factura.estado === 'Pagada')) {
+                facturasAsociadas.push(factura.id_factura);
+              }
+            });
+          }
+        });
+      } catch (error) {
+        console.warn("No se pudo verificar facturas asociadas:", error);
+        // Continuar con eliminación a pesar del error
+      }
+  
+      // 2. Mostrar advertencia si hay facturas asociadas
+      if (facturasAsociadas.length > 0) {
+        const confirmacion = await Swal.fire({
+          icon: 'warning',
+          title: 'Advertencia',
+          html: `Este producto está asociado a ${facturasAsociadas.length} factura(s) pendiente(s) o pagada(s). 
+                 <br>¿Desea eliminarlo de todas formas?`,
+          showCancelButton: true,
+          confirmButtonText: 'Sí, eliminar',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#d33',
+        });
+        
+        if (!confirmacion.isConfirmed) return;
+      }
+  
+      // 3. Proceder con la eliminación
+      await axios.delete(`${API_BASE_URL}/PrivProd/${id_producto}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+  
+      Swal.fire(
+        '¡Eliminado!',
+        'El producto ha sido eliminado.',
+        'success'
+      );
+  
+      fetchProductos();
+    } catch (error) {
+      console.error("Error al eliminar el producto:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.response?.data?.mensaje || 'Error al eliminar el producto'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleStatusChange = async (id_producto, estadoActual) => {
+    const result = await Swal.fire({
+      title: `¿Estás seguro?`,
+      text: `¿Deseas cambiar el estado a ${estadoActual === 'Disponible' ? 'Descontinuado' : 'Disponible'}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const nuevoEstado = estadoActual === 'Disponible' ? 'Descontinuado' : 'Disponible';
+      
+      await axios.patch(
+        `${API_BASE_URL}/PrivProd/${id_producto}`,
+        { estado: nuevoEstado },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setProductos(prevProductos =>
+        prevProductos.map(producto =>
+          producto.id_producto === id_producto
+            ? { ...producto, estado: nuevoEstado }
+            : producto
+        )
+      );
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: `Estado del producto actualizado a ${nuevoEstado}`
+      });
+    } catch (error) {
+      console.error("Error al cambiar el estado:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al cambiar el estado del producto'
+      });
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditProducto({ ...editProducto, [name]: value });
@@ -208,6 +339,17 @@ const EmpProductos = () => {
       if (editProducto.imagenFile) {
         formData.append('imagen', editProducto.imagenFile);
       }
+        if (!validateForm()) {
+          // Si hay errores, desplazarse al primer error
+          const firstError = Object.keys(errors)[0];
+          if (firstError) {
+            document.querySelector(`[name="${firstError}"]`)?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+          return;
+        }
 
       const config = {
         headers: {
@@ -356,7 +498,9 @@ const EmpProductos = () => {
                   </td>
                   <td>{producto.descripcion || 'Sin descripción'}</td>
                   <td>{producto.stock}</td>
-                  <td>{producto.estado}</td>
+                  <td className={producto.estado === 'Disponible' ? 'text-success' : 'text-danger'}>
+                    {producto.estado}
+                  </td>
                   <td>
                     <img
                       src={producto.imagen || 'https://via.placeholder.com/100'}
@@ -374,6 +518,14 @@ const EmpProductos = () => {
                     <Button variant="warning" className="me-2" onClick={() => handleEditProducto(producto)}>
                       Editar
                     </Button>
+                    <Button 
+                      variant="danger" 
+                      className="me-2" 
+                      onClick={() => handleDeleteProducto(producto.id_producto)}
+                    >
+                      Eliminar
+                    </Button>
+
                   </td>
                 </tr>
               ))
@@ -544,29 +696,33 @@ const EmpProductos = () => {
         </Form.Text>
       </Form.Group>
       
-      <Form.Group className="mb-3" controlId="formImagen">
-        <Form.Label>Imagen</Form.Label>
-        <Form.Control 
-          type="file" 
-          accept="image/*" 
-          onChange={handleImageUpload} 
-          disabled={loading}
-          title="Suba una imagen del producto (opcional). Formatos aceptados: JPG, PNG, etc."
-        />
-        {editProducto.imagen && (
-          <div className="mt-2">
-            <img 
-              src={editProducto.imagen} 
-              alt="Vista previa" 
-              style={{ width: "100px", height: "auto" }} 
-              className="img-thumbnail"
-            />
-          </div>
-        )}
-        <Form.Text className="text-muted">
-          Imagen representativa del producto (formatos: JPG, PNG, etc.).
-        </Form.Text>
-      </Form.Group>
+    <Form.Group className="mb-3" controlId="formImagen">
+      <Form.Label>Imagen {isNewProducto && '*'}</Form.Label>
+      <Form.Control 
+        type="file" 
+        accept="image/*" 
+        onChange={handleImageUpload} 
+        disabled={loading}
+        className={errors.imagen ? 'is-invalid' : ''}
+        required={isNewProducto}
+        title="Suba una imagen del producto. Formatos aceptados: JPG, PNG, etc."
+      />
+      {errors.imagen && <div className="invalid-feedback">{errors.imagen}</div>}
+      {editProducto.imagen && (
+        <div className="mt-2">
+          <img 
+            src={editProducto.imagen} 
+            alt="Vista previa" 
+            style={{ width: "100px", height: "auto" }} 
+            className="img-thumbnail"
+          />
+        </div>
+      )}
+      <Form.Text className="text-muted">
+        Imagen representativa del producto (formatos: JPG, PNG, etc.). 
+        {isNewProducto && " Campo obligatorio para nuevos productos."}
+      </Form.Text>
+    </Form.Group>
     </Form>
   </Modal.Body>
   <Modal.Footer>
