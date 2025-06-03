@@ -550,7 +550,7 @@ const AdminEmpleados = () => {
                     value={editEmployee.contrasena}
                     onChange={handleInputChange}
                     placeholder="Ingrese contraseña"
-                    pattern="^(?=.*[A-Z])(?=(?:.*[a-z]){5,})(?=.*\d)(?=.*[^A-Za-z0-9]).{8,10}$"
+                    pattern="^(?=.*[A-Z])(?=(?:.*[a-z]){5,})(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$"
                     title="Debe tener 1 mayúscula, al menos 5 minúsculas, 1 número, 1 símbolo, entre 8 y 10 caracteres."
                     required
                   />
