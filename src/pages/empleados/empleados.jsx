@@ -100,7 +100,7 @@ const AdminEmpleados = () => {
       });
 
       const empleadosConTipoDoc = response.data.empleados.map(empleado => {
-        const tipoDocumento = tiposDoc.find(t => t.id_TipoDocumento === parseInt(empleado.tipo_doc));
+        const tipoDocumento = tiposDoc.find(t => t.id_tipodocumento === parseInt(empleado.tipo_doc));
         return {
           ...empleado,
           tipo_doc_nombre: tipoDocumento ? tipoDocumento.Nombre : 'N/A',
@@ -498,7 +498,7 @@ const AdminEmpleados = () => {
                 >
                   <option value="">Seleccione un tipo de documento</option>
                   {tiposDoc.map((tipo) => (
-                    <option key={tipo.id_TipoDocumento} value={tipo.id_TipoDocumento}>
+                    <option key={tipo.id_tipodocumento} value={tipo.id_tipodocumento}>
                       {tipo.Nombre} - {tipo.Descripcion}
                     </option>
                   ))}

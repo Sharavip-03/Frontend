@@ -30,6 +30,27 @@ const Principal = () => {
   const [allProducts, setAllProducts] = useState([]);
   const navigate = useNavigate();
 
+    const handleDownloadApp = () => {
+    // Mostrar alerta de agradecimiento
+    Swal.fire({
+      title: '¡Gracias por descargar nuestra app!',
+      text: 'La descarga comenzará automáticamente.',
+      icon: 'success',
+      confirmButtonText: 'Entendido',
+      timer: 3000,
+      timerProgressBar: true
+    }).then(() => {
+      // Simular descarga del APK
+      const apkUrl = '/ruta/a/tu/archivo.apk'; // Reemplaza con la ruta correcta a tu APK
+      const link = document.createElement('a');
+      link.href = apkUrl;
+      link.download = 'EsconditeAnimal.apk';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  };
+
   // Función para manejar la redirección a categorías
   const handleCategoryClick = (categoryId, categoryName) => {
     axios.get(`${API_BASE_URL}/PrivProd`)
@@ -407,6 +428,15 @@ const Principal = () => {
               <XIcon style={{ width: "50px", height: "50px", color: "#FF8357" }}/>
             </div>
           </a>
+        </div>
+                {/* Botón de descarga de la app */}
+        <div className="download-app-container">
+          <button 
+            onClick={handleDownloadApp}
+            className="download-app-btn"
+          >
+            Clic aquí para descargar la app
+          </button>
         </div>
         <div className="copyright">
           <p>© 2023 El Escondite Animal</p>

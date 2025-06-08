@@ -231,7 +231,7 @@ const Perfil = ({ onClose }) => {
   };
   const getTipoDocNombre = (tipoDocId) => {
     if (!tipoDocId) return "No especificado";
-    const tipo = tiposDoc.find(t => t.id_TipoDocumento === parseInt(tipoDocId));
+    const tipo = tiposDoc.find(t => t.id_tipodocumento === parseInt(tipoDocId));
     return tipo ? tipo.Nombre : "Desconocido";
   };
 
@@ -387,7 +387,7 @@ const Perfil = ({ onClose }) => {
               >
                 <option value="">Seleccione un tipo de documento</option>
                 {tiposDoc.map((tipo) => (
-                  <option key={tipo.id_TipoDocumento} value={tipo.id_TipoDocumento}>
+                  <option key={tipo.id_tipodocumento} value={tipo.id_tipodocumento}>
                     {tipo.Nombre} - {tipo.Descripcion}
                   </option>
                 ))}
