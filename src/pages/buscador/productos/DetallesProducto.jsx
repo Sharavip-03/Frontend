@@ -9,7 +9,7 @@ import {
   CheckCircle,
   Cancel
 } from '@mui/icons-material';
-import './detallesProducto.css';
+import './DetallesProducto.css';
 import API_BASE_URL from '../../../config/apiConfig';
 import Swal from 'sweetalert2';
 
