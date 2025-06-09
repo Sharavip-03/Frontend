@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Button, Alert, Modal, Form, Spinner } from "react-bootstrap";
 import EditIcon from '@mui/icons-material/Edit';
-import "./Perfil.css";
+import "./perfil.css";
 import API_BASE_URL from "../../config/apiConfig";
 import Swal from 'sweetalert2';
 
