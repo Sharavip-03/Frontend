@@ -499,7 +499,7 @@ const AdminEmpleados = () => {
                   <option value="">Seleccione un tipo de documento</option>
                   {tiposDoc.map((tipo) => (
                     <option key={tipo.id_tipodocumento} value={tipo.id_tipodocumento}>
-                      {tipo.Nombre} - {tipo.Descripcion}
+                      {tipo.nombre} - {tipo.descripcion}
                     </option>
                   ))}
                 </Form.Select>

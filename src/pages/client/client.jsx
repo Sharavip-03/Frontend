@@ -105,10 +105,10 @@ const AdminClientes = () => {
       });
       
       const usuariosConTipoDoc = response.data.clientes.map(usuario => {
-        const tipoDocumento = tiposDoc.find(t => t.id_TipoDocumento === parseInt(usuario.tipo_doc));
+        const tipoDocumento = tiposDoc.find(t => t.id_tipodocumento === parseInt(usuario.tipo_doc));
         return {
           ...usuario,
-          tipo_doc_nombre: tipoDocumento ? tipoDocumento.Nombre : 'N/A',
+          tipo_doc_nombre: tipoDocumento ? tipoDocumento.nombre : 'N/A',
           estado: usuario.estado || 'Activo' // Asegurar que siempre tenga estado
         };
       });
@@ -520,8 +520,8 @@ const checkIfExists = async (field, value) => {
                 >
                   <option value="">Seleccione un tipo de documento</option>
                   {tiposDoc.map((tipo) => (
-                    <option key={tipo.id_TipoDocumento} value={tipo.id_TipoDocumento}>
-                      {tipo.Nombre} - {tipo.Descripcion}
+                    <option key={tipo.id_tipodocumento} value={tipo.id_tipodocumento}>
+                      {tipo.nombre} - {tipo.descripcion}
                     </option>
                   ))}
                 </Form.Select>

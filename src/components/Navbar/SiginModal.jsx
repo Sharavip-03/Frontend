@@ -215,8 +215,8 @@ const RegistroModal = ({ show, handleClose, handleLoginClick }) => {
               >
                 <option value="">{loading ? 'Cargando...' : 'Seleccione'}</option>
                 {tipoDocs.map(tipo => (
-                  <option key={tipo.id_TipoDocumento} value={tipo.id_TipoDocumento}>
-                    {tipo.Nombre}
+                  <option key={tipo.id_tipodocumento} value={tipo.id_tipodocumento}>
+                    {tipo.nombre}
                   </option>
                 ))}
               </select>
