@@ -30,27 +30,44 @@ const Principal = () => {
   const [allProducts, setAllProducts] = useState([]);
   const navigate = useNavigate();
 
-    const handleDownloadApp = () => {
-    // Mostrar alerta de agradecimiento
-    Swal.fire({
-      title: '¡Gracias por descargar nuestra app!',
-      text: 'La descarga comenzará automáticamente.',
-      icon: 'success',
-      confirmButtonText: 'Entendido',
-      timer: 3000,
-      timerProgressBar: true
-    }).then(() => {
-      // Simular descarga del APK
-      const apkUrl = '/ruta/a/tu/archivo.apk'; // Reemplaza con la ruta correcta a tu APK
+ const handleDownloadApp = () => {
+  Swal.fire({
+    title: '¿Deseas descargar nuestra app?',
+    text: 'Disponible para dispositivos Android',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: '¡Sí, descargar!',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const apkUrl = '/app-release.apk';
       const link = document.createElement('a');
       link.href = apkUrl;
-      link.download = 'EsconditeAnimal.apk';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
-  };
-
+      link.download = 'app-release.apk';
+      
+      // Verificar si el navegador soporta la descarga
+      try {
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Mostrar confirmación
+        Swal.fire(
+          '¡Descarga iniciada!',
+          'Si la descarga no comienza automáticamente, haz clic derecho en el enlace y selecciona "Guardar enlace como..."',
+          'success'
+        );
+      } catch (error) {
+        Swal.fire(
+          'Error',
+          'No se pudo iniciar la descarga automáticamente. Por favor, intenta nuevamente o descarga manualmente desde el enlace.',
+          'error'
+        );
+        console.error("Error al descargar APK:", error);
+      }
+    }
+  });
+};
   // Función para manejar la redirección a categorías
   const handleCategoryClick = (categoryId, categoryName) => {
     axios.get(`${API_BASE_URL}/PrivProd`)
